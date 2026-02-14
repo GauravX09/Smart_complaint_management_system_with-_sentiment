@@ -1,0 +1,65 @@
+/* stylelint-disable at-rule-no-unknown */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
+
+/* ============================= */
+/* GLOBAL BASE STYLES            */
+/* ============================= */
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-gray-100 text-gray-800;
+}
+
+/* ============================= */
+/* DARK MODE BASE FIX (IMPORTANT)*/
+/* ============================= */
+
+.dark body {
+  background-color: #111827; /* gray-900 */
+  color: #e5e7eb; /* gray-200 */
+}
+
+/* ============================= */
+/* SCROLLBAR (LIGHT MODE)        */
+/* ============================= */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e5e7eb; /* gray-200 */
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4f46e5, #6366f1);
+  border-radius: 10px;
+}
+
+/* ============================= */
+/* SCROLLBAR (DARK MODE)         */
+/* ============================= */
+
+.dark ::-webkit-scrollbar-track {
+  background: #111827; /* gray-900 */
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #374151; /* gray-700 */
+  border-radius: 10px;
+}
+
+/* ============================= */
+/* OPTIONAL SMOOTH TRANSITIONS   */
+/* ============================= */
+
+* {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
