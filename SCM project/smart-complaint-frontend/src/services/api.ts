@@ -1,21 +1,19 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://smartbackend-production-5756.up.railway.app/api",
+  baseURL: "smartbackend-production-1a43.up.railway.app/api",
+  headers: {
+    "Content-Type": "application/json",
+  },
   withCredentials: false,
 });
 
-// 🔐 Attach JWT token (EXCEPT for OPTIONS)
+// Attach JWT
 API.interceptors.request.use(
   (config) => {
-    if (config.method?.toUpperCase() === "OPTIONS") {
-      return config;
-    }
-
-    const superAdminToken = localStorage.getItem("superAdminToken");
-    const userToken = localStorage.getItem("token");
-
-    const token = superAdminToken || userToken;
+    const token =
+      localStorage.getItem("superAdminToken") ||
+      localStorage.getItem("token");
 
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
