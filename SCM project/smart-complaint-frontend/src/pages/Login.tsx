@@ -9,7 +9,6 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // ================= LOGIN FUNCTION =================
   const loginUser = async () => {
     if (!email || !password) {
       toast.error("All fields are required");
@@ -17,7 +16,6 @@ const Login: React.FC = () => {
     }
 
     try {
-      // ✅ FINAL CORRECT API PATH
       const res = await API.post("/api/auth/login", {
         email,
         password,
@@ -25,8 +23,8 @@ const Login: React.FC = () => {
 
       const { token, role, status } = res.data;
 
-      // ✅ STATUS CHECK
-      if (status !== "APPROVED") {
+      // ✅ FIXED CONDITION (IMPORTANT)
+      if (role !== "SUPER_ADMIN" && status !== "APPROVED") {
         toast.error("Account not approved");
         return;
       }
@@ -54,7 +52,6 @@ const Login: React.FC = () => {
     } catch (error: any) {
       console.error(error);
 
-      // ✅ Proper backend error handling
       if (error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else if (error.response?.data) {
@@ -65,18 +62,15 @@ const Login: React.FC = () => {
     }
   };
 
-  // ================= GOOGLE LOGIN =================
   const handleGoogleLogin = () => {
     window.location.href =
       "https://smartbackend-production-5756.up.railway.app/oauth2/authorization/google";
   };
 
-  // ================= UI =================
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600">
       <div className="flex w-[900px] h-[500px] bg-white rounded-xl shadow-2xl overflow-hidden">
         
-        {/* LEFT */}
         <div className="w-1/2 bg-gradient-to-b from-blue-400 to-blue-600 text-white p-10 flex flex-col justify-center">
           <h2 className="text-3xl font-bold mb-4">Welcome to SCM</h2>
           <p className="text-sm opacity-90">
@@ -85,7 +79,6 @@ const Login: React.FC = () => {
           </p>
         </div>
 
-        {/* RIGHT */}
         <div className="w-1/2 p-10">
           <h2 className="text-2xl font-bold text-blue-600 mb-6">
             Login
