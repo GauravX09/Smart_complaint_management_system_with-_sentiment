@@ -1,29 +1,70 @@
 import React, { useEffect, useState } from "react";
 import API from "../../services/api";
+import Loader from "../../components/Loader";
+import { motion } from "framer-motion";
 
 interface Complaint {
   id: number;
-  userName: string;
   userEmail: string;
   category: string;
-  description: string;
   status: string;
-  createdAt?: string;
-  imagePath?: string;
-  videoPath?: string;
-  audioPath?: string;
+  description: string;
+  sentiment: string;
+  sentimentScore: number;
 }
 
 const AdminComplaints: React.FC = () => {
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
 
-  const fetchComplaints = async () => {
+  // ================= FETCH =================
+
+     
+          const fetchComplaints = async () => {
+            try {
+              setLoading(true);
+          
+              // 🔥 DEBUG ALL STORAGE
+              console.log("LOCAL STORAGE:", localStorage);
+          
+              // 🔥 Try multiple keys (safe approach)
+              let email =
+                localStorage.getItem("userEmail") ||
+                JSON.parse(localStorage.getItem("user") || "{}")?.email ||
+                JSON.parse(localStorage.getItem("admin") || "{}")?.email;
+          
+              console.log("Extracted Email:", email);
+          
+              if (!email) {
+                alert("Email not found in localStorage");
+                return;
+              }
+          
+              const res = await API.get(
+                `/api/complaints/admin?email=${email}`
+              );
+          
+              console.log("API DATA:", res.data);
+          
+              setComplaints(res.data || []);
+            } catch (err) {
+              console.error("Error fetching complaints", err);
+            } finally {
+              setLoading(false);
+            }
+          };
+          
+
+  
+        
+
+  // ================= UPDATE STATUS =================
+  const updateStatus = async (id: number, status: string) => {
     try {
-      const res = await API.get("/api/complaints/all");
-      setComplaints(res.data || []);
-    } finally {
-      setLoading(false);
+      await API.put(`/api/complaints/${id}/status?status=${status}`);
+      fetchComplaints();
+    } catch (err) {
+      console.error("Status update failed", err);
     }
   };
 
@@ -31,103 +72,97 @@ const AdminComplaints: React.FC = () => {
     fetchComplaints();
   }, []);
 
-  const updateStatus = async (id: number, status: string) => {
-    await API.put(`/api/complaints/${id}/status?status=${status}`);
-    fetchComplaints();
-  };
-
-  const deleteComplaint = async (id: number) => {
-    if (!window.confirm("Delete this complaint permanently?")) return;
-    await API.delete(`/api/complaints/${id}`);
-    fetchComplaints();
-  };
+  if (loading) return <Loader />;
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold text-indigo-700 mb-4">
-        Manage Complaints
+    <div className="p-6 space-y-6">
+
+      {/* HEADER */}
+      <h2 className="text-2xl font-bold text-gray-700">
+        📋 Department Complaints
       </h2>
 
-      {loading && <p>Loading complaints...</p>}
-
-      {!loading && (
-        <table className="w-full border bg-white rounded">
-          <thead className="bg-gray-100">
+      {/* TABLE */}
+      <div className="overflow-x-auto bg-white rounded-xl shadow-lg">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-gray-100 text-gray-700">
             <tr>
-              <th className="p-2 border">User</th>
-              <th className="p-2 border">Category</th>
-              <th className="p-2 border">Description</th>
-              <th className="p-2 border">Media</th>
-              <th className="p-2 border">Status</th>
-              <th className="p-2 border">Action</th>
+              <th className="p-3">ID</th>
+              <th className="p-3">Email</th>
+              <th className="p-3">Category</th>
+              <th className="p-3">Status</th>
+              <th className="p-3">Sentiment</th>
+              <th className="p-3">Score</th>
+              <th className="p-3">Actions</th>
             </tr>
           </thead>
+
           <tbody>
             {complaints.map((c) => (
-              <tr key={c.id}>
-                <td className="p-2 border">
-                  {c.userName}
-                  <br />
-                  <span className="text-xs text-gray-500">
-                    {c.userEmail}
+              <motion.tr
+                key={c.id}
+                whileHover={{ scale: 1.01 }}
+                className={`border-b 
+                  ${
+                    c.sentiment === "NEGATIVE"
+                      ? "bg-red-50"
+                      : "bg-white"
+                  }`}
+              >
+                <td className="p-3 font-medium">{c.id}</td>
+                <td className="p-3">{c.userEmail}</td>
+                <td className="p-3">{c.category}</td>
+                <td className="p-3">
+                  <span
+                    className={`px-2 py-1 rounded text-white text-xs ${
+                      c.status === "RESOLVED"
+                        ? "bg-green-500"
+                        : "bg-yellow-500"
+                    }`}
+                  >
+                    {c.status}
                   </span>
                 </td>
 
-                <td className="p-2 border">{c.category}</td>
-                <td className="p-2 border">{c.description}</td>
-
-                {/* MEDIA */}
-                <td className="p-2 border space-y-2">
-                  {c.imagePath && (
-                    <img
-                      src={`http://localhost:8080${c.imagePath}`}
-                      className="w-20 rounded"
-                    />
-                  )}
-                  {c.videoPath && (
-                    <video
-                      src={`http://localhost:8080${c.videoPath}`}
-                      controls
-                      className="w-32"
-                    />
-                  )}
-                  {c.audioPath && (
-                    <audio
-                      src={`http://localhost:8080${c.audioPath}`}
-                      controls
-                    />
-                  )}
+                {/* SENTIMENT */}
+                <td className="p-3 font-semibold">
+                  {c.sentiment}
                 </td>
 
-                {/* STATUS */}
-                <td className="p-2 border">
-                  <select
-                    value={c.status}
-                    onChange={(e) =>
-                      updateStatus(c.id, e.target.value)
-                    }
-                    className="border p-1 rounded"
-                  >
-                    <option value="PENDING">PENDING</option>
-                    <option value="RESOLVED">RESOLVED</option>
-                    <option value="REJECTED">REJECTED</option>
-                  </select>
+                <td className="p-3">
+                  {(c.sentimentScore * 100).toFixed(1)}%
                 </td>
 
-                {/* DELETE */}
-                <td className="p-2 border">
+                {/* ACTIONS */}
+                <td className="p-3 space-x-2">
+
+                  {/* RESOLVE */}
                   <button
-                    onClick={() => deleteComplaint(c.id)}
-                    className="text-red-600 hover:underline"
+                    onClick={() => updateStatus(c.id, "RESOLVED")}
+                    className="px-3 py-1 bg-green-500 text-white rounded"
                   >
-                    Delete
+                    Resolve
                   </button>
+
+                  {/* PENDING */}
+                  <button
+                    onClick={() => updateStatus(c.id, "PENDING")}
+                    className="px-3 py-1 bg-yellow-500 text-white rounded"
+                  >
+                    Pending
+                  </button>
+
+                  {/* OPEN (future page) */}
+                  <button className="px-3 py-1 bg-blue-500 text-white rounded">
+                    Open
+                  </button>
+
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>
-      )}
+      </div>
     </div>
   );
 };

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
+import { motion } from "framer-motion";
+import { Eye, EyeOff } from "lucide-react";
 
 const DEPARTMENTS = [
   "ENGINEERING",
@@ -29,6 +31,7 @@ const Register: React.FC = () => {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -39,10 +42,7 @@ const Register: React.FC = () => {
   };
 
   const isValidEmail = (email: string) => {
-    return (
-      email.endsWith("@amity.edu") ||
-      email.endsWith("@gmail.com")
-    );
+    return email.endsWith("@amity.edu") || email.endsWith("@gmail.com");
   };
 
   const registerUser = async () => {
@@ -74,21 +74,10 @@ const Register: React.FC = () => {
       return;
     }
 
-    const payload = {
-      firstName,
-      lastName,
-      phoneNumber,
-      department,
-      email,
-      password,
-    };
-
     try {
-      await API.post("/api/auth/register", payload);
+      await API.post("/api/auth/register", form);
 
-      setSuccess(
-        "Registration successful. Waiting for Super Admin approval."
-      );
+      setSuccess("Registration successful. Awaiting admin approval.");
 
       setForm({
         firstName: "",
@@ -104,97 +93,127 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white shadow-2xl rounded-xl w-[420px] p-8 space-y-4">
-        <h2 className="text-2xl font-bold text-center text-indigo-600">
-          Registration
-        </h2>
-
-        {error && (
-          <div className="text-red-700 bg-red-100 p-2 rounded text-sm">
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="text-green-700 bg-green-100 p-2 rounded text-sm">
-            {success}
-          </div>
-        )}
-
-        <div className="flex gap-3">
-          <input
-            name="firstName"
-            placeholder="First Name"
-            className="w-1/2 p-2 border rounded"
-            value={form.firstName}
-            onChange={handleChange}
-          />
-          <input
-            name="lastName"
-            placeholder="Last Name"
-            className="w-1/2 p-2 border rounded"
-            value={form.lastName}
-            onChange={handleChange}
-          />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex w-[950px] bg-white rounded-2xl shadow-2xl overflow-hidden"
+      >
+        {/* LEFT PANEL */}
+        <div className="w-1/2 bg-gradient-to-b from-blue-400 to-blue-600 text-white p-10 flex flex-col justify-center">
+          <h2 className="text-3xl font-bold mb-4">Join SCM 🚀</h2>
+          <p className="text-sm opacity-90">
+            Register to manage complaints, track progress and get AI-based insights.
+          </p>
         </div>
 
-        <input
-          name="phoneNumber"
-          placeholder="Phone Number"
-          className="w-full p-2 border rounded"
-          value={form.phoneNumber}
-          onChange={handleChange}
-        />
+        {/* RIGHT PANEL */}
+        <div className="w-1/2 p-10">
+          <h2 className="text-2xl font-bold text-blue-600 mb-6">
+            Registration
+          </h2>
 
-        <select
-          name="department"
-          className="w-full p-2 border rounded"
-          value={form.department}
-          onChange={handleChange}
-        >
-          <option value="">Select Department</option>
-          {DEPARTMENTS.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </select>
+          {/* ALERTS */}
+          {error && (
+            <div className="bg-red-100 text-red-700 p-2 rounded mb-3 text-sm">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-100 text-green-700 p-2 rounded mb-3 text-sm">
+              {success}
+            </div>
+          )}
 
-        <input
-          name="email"
-          placeholder="Email (@amity.edu / @gmail.com)"
-          className="w-full p-2 border rounded"
-          value={form.email}
-          onChange={handleChange}
-        />
+          {/* NAME */}
+          <div className="flex gap-3 mb-4">
+            <input
+              name="firstName"
+              placeholder="First Name"
+              className="w-1/2 p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              value={form.firstName}
+              onChange={handleChange}
+            />
+            <input
+              name="lastName"
+              placeholder="Last Name"
+              className="w-1/2 p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              value={form.lastName}
+              onChange={handleChange}
+            />
+          </div>
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          className="w-full p-2 border rounded"
-          value={form.password}
-          onChange={handleChange}
-        />
+          {/* PHONE */}
+          <input
+            name="phoneNumber"
+            placeholder="Phone Number"
+            className="w-full p-3 border rounded-lg mb-4 focus:ring-2 focus:ring-blue-400"
+            value={form.phoneNumber}
+            onChange={handleChange}
+          />
 
-        <button
-          onClick={registerUser}
-          className="w-full bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700 transition"
-        >
-          Register
-        </button>
-
-        <p className="text-center text-sm">
-          Already have an account?{" "}
-          <span
-            className="text-indigo-600 cursor-pointer font-semibold"
-            onClick={() => navigate("/login")}
+          {/* DEPARTMENT */}
+          <select
+            name="department"
+            className="w-full p-3 border rounded-lg mb-4 focus:ring-2 focus:ring-blue-400"
+            value={form.department}
+            onChange={handleChange}
           >
-            Sign in
-          </span>
-        </p>
-      </div>
+            <option value="">Select Department</option>
+            {DEPARTMENTS.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+
+          {/* EMAIL */}
+          <input
+            name="email"
+            placeholder="Email (@amity.edu / @gmail.com)"
+            className="w-full p-3 border rounded-lg mb-4 focus:ring-2 focus:ring-blue-400"
+            value={form.email}
+            onChange={handleChange}
+          />
+
+          {/* PASSWORD */}
+          <div className="relative mb-6">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="Password"
+              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              value={form.password}
+              onChange={handleChange}
+            />
+            <span
+              className="absolute right-3 top-3 cursor-pointer text-gray-600"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </span>
+          </div>
+
+          {/* BUTTON */}
+          <button
+            onClick={registerUser}
+            className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition font-semibold"
+          >
+            Register
+          </button>
+
+          {/* LOGIN */}
+          <p className="text-sm mt-4 text-center">
+            Already have an account?{" "}
+            <span
+              className="text-blue-600 cursor-pointer font-semibold"
+              onClick={() => navigate("/auth")}
+            >
+              Sign in
+            </span>
+          </p>
+        </div>
+      </motion.div>
     </div>
   );
 };

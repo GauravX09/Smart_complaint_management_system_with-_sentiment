@@ -1,123 +1,98 @@
-import React, { useState, useEffect } from "react";
-import API from "../services/api";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import API from "../services/api";
+import { toast } from "react-toastify";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
 
-  // -----------------------------------
-  // ✅ AUTO REDIRECT (ALL ROLES)
-  // -----------------------------------
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
-
-    if (token && role) {
-      if (role === "SUPER_ADMIN") {
-        navigate("/super-admin/dashboard", { replace: true });
-      } else if (role === "ADMIN") {
-        navigate("/admin/dashboard", { replace: true });
-      } else if (role === "USER") {
-        navigate("/user/dashboard", { replace: true });
-      }
-    }
-  }, [navigate]);
-  // -----------------------------------
-
+  // ================= LOGIN FUNCTION =================
   const loginUser = async () => {
-    setError("");
-
     if (!email || !password) {
-      setError("Email and password are required");
+      toast.error("All fields are required");
       return;
     }
 
     try {
-      const res = await API.post("/api/auth/login", {
+      // ✅ FIXED API PATH (removed extra /api)
+      const res = await API.post("/auth/login", {
         email,
         password,
       });
 
-      /**
-       * Expected backend response:
-       * {
-       *   token,
-       *   role,
-       *   status
-       * }
-       */
-
       const { token, role, status } = res.data;
 
-      // ⛔ STATUS CHECK
-      if (status === "PENDING") {
-        setError("Your account is pending approval.");
+      if (status !== "APPROVED") {
+        toast.error("Account not approved");
         return;
       }
 
-      if (status === "REJECTED") {
-        setError("Your registration was rejected.");
-        return;
-      }
-
-      if (status === "BLOCKED") {
-        setError("Your account has been blocked. Contact support.");
-        return;
-      }
-
-      // ✅ STORE SESSION
+      // ✅ STORE DATA
       localStorage.setItem("token", token);
-      localStorage.setItem("email", email);
       localStorage.setItem("role", role);
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ email, name: email.split("@")[0] })
+      );
+
+      toast.success("Login Successful!");
 
       // ✅ ROLE BASED REDIRECT
       if (role === "SUPER_ADMIN") {
-        navigate("/super-admin/dashboard", { replace: true });
+        navigate("/super-admin/dashboard");
       } else if (role === "ADMIN") {
-        navigate("/admin/dashboard", { replace: true });
+        navigate("/admin/dashboard");
       } else {
-        navigate("/user/dashboard", { replace: true });
+        navigate("/user/dashboard");
       }
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message || "Invalid email or password"
-      );
+
+    } catch (error: any) {
+      console.error(error);
+
+      // ✅ Better error handling
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Login failed");
+      }
     }
   };
 
+  // ================= GOOGLE LOGIN =================
+  const handleGoogleLogin = () => {
+    // ✅ FIXED URL (removed localhost)
+    window.location.href =
+      "https://smartbackend-production-5756.up.railway.app/oauth2/authorization/google";
+  };
+
+  // ================= UI =================
   return (
-    <div className="flex w-full h-screen justify-center items-center bg-gray-200">
-      <div className="flex bg-white shadow-2xl rounded-xl overflow-hidden w-[900px] h-[420px]">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600">
+      <div className="flex w-[900px] h-[500px] bg-white rounded-xl shadow-2xl overflow-hidden">
         
-        {/* LEFT IMAGE */}
-        <div className="w-1/2 bg-blue-50 flex justify-center items-center">
-          <img
-            src="/image.png"
-            alt="Login"
-            className="w-2/3"
-          />
+        {/* LEFT */}
+        <div className="w-1/2 bg-gradient-to-b from-blue-400 to-blue-600 text-white p-10 flex flex-col justify-center">
+          <h2 className="text-3xl font-bold mb-4">Welcome to SCM</h2>
+          <p className="text-sm opacity-90">
+            Smart Complaint Management System  
+            Submit, track and resolve complaints easily.
+          </p>
         </div>
 
-        {/* RIGHT FORM */}
-        <div className="w-1/2 p-10 space-y-4">
-          <h2 className="text-2xl font-bold text-center text-blue-600">
-            System Login
+        {/* RIGHT */}
+        <div className="w-1/2 p-10">
+          <h2 className="text-2xl font-bold text-blue-600 mb-6">
+            Login
           </h2>
-
-          {error && (
-            <div className="text-red-700 bg-red-100 p-2 rounded text-sm">
-              {error}
-            </div>
-          )}
 
           <input
             type="email"
             placeholder="Email"
-            className="w-full p-2 border rounded-lg"
+            className="w-full p-3 border rounded-lg mb-4"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -125,23 +100,45 @@ const Login: React.FC = () => {
           <input
             type="password"
             placeholder="Password"
-            className="w-full p-2 border rounded-lg"
+            className="w-full p-3 border rounded-lg mb-2"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
 
+          <p
+            className="text-sm text-blue-600 cursor-pointer mb-4"
+            onClick={() => navigate("/forgot-password")}
+          >
+            Forgot Password?
+          </p>
+
           <button
             onClick={loginUser}
-            className="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition"
+            className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700"
           >
-            Sign In
+            LOGIN
           </button>
 
-          <p
-            className="text-sm text-center text-blue-600 cursor-pointer hover:underline"
-            onClick={() => navigate("/register")}
+          <button
+            onClick={handleGoogleLogin}
+            className="w-full mt-4 border p-3 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-100"
           >
-            Don’t have an account? Create one
+            <img
+              src="https://img.icons8.com/color/48/google-logo.png"
+              alt="google"
+              className="w-5"
+            />
+            Sign in with Google
+          </button>
+
+          <p className="text-sm mt-4 text-center">
+            New User?{" "}
+            <span
+              className="text-blue-600 cursor-pointer"
+              onClick={() => navigate("/register")}
+            >
+              Signup
+            </span>
           </p>
         </div>
       </div>

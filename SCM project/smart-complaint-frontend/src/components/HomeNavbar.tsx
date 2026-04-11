@@ -22,6 +22,9 @@ const HomeNavbar: React.FC = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const isLoggedIn = !!localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
   return (
     <motion.nav
       initial={{ opacity: 0 }}
@@ -33,6 +36,7 @@ const HomeNavbar: React.FC = () => {
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+        
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 flex items-center justify-center text-white font-bold">
@@ -45,6 +49,8 @@ const HomeNavbar: React.FC = () => {
 
         {/* Right Menu */}
         <div className="flex items-center gap-4">
+
+          {/* Home */}
           <Link
             to="/"
             className={`hidden md:inline-block px-3 py-1 rounded ${
@@ -78,34 +84,62 @@ const HomeNavbar: React.FC = () => {
             {showNotifications && <NotificationDropdown />}
           </div>
 
-          {/* ⭐ SUPER ADMIN (DIRECT LOGIN) */}
-          <button
-            onClick={() => navigate("/super-admin/login")}
-            className="px-3 py-1 rounded border border-indigo-600 text-indigo-600 hover:bg-indigo-600 hover:text-white transition"
-          >
-            Super Admin
-          </button>
+          {/* 🔥 ROLE BASED UI */}
+          {isLoggedIn ? (
+            <>
+              {/* Dashboard */}
+              <button
+                onClick={() => {
+                  if (role === "SUPER_ADMIN") {
+                    navigate("/super-admin/dashboard");
+                  } else if (role === "ADMIN") {
+                    navigate("/admin/dashboard");
+                  } else {
+                    navigate("/user/dashboard");
+                  }
+                }}
+                className="px-4 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                Dashboard
+              </button>
 
-          {/* Normal Auth */}
-          <Link
-            to="/auth"
-            className="px-3 py-1 rounded text-gray-700 dark:text-gray-300 hover:text-indigo-600"
-          >
-            Login
-          </Link>
+              {/* Logout */}
+              <button
+                onClick={() => {
+                  localStorage.clear();
+                  navigate("/");
+                }}
+                className="px-4 py-1 rounded bg-red-500 text-white hover:bg-red-600"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              {/* Login */}
+              <Link
+                to="/login"
+                className="px-4 py-1 rounded text-gray-700 dark:text-gray-300 hover:text-indigo-600 font-medium"
+              >
+                Login
+              </Link>
 
-          <Link
-            to="/register"
-            className="px-3 py-1 rounded bg-yellow-400 text-black hover:bg-yellow-300"
-          >
-            Register
-          </Link>
+              {/* Register */}
+              <Link
+                to="/register"
+                className="px-4 py-1 rounded bg-yellow-400 text-black hover:bg-yellow-300 font-medium"
+              >
+                Register
+              </Link>
+            </>
+          )}
 
+          {/* Theme Toggle */}
           <ThemeToggle theme={theme} toggle={toggle} />
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Help Modal */}
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
     </motion.nav>
   );

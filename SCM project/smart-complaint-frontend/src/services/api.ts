@@ -1,14 +1,13 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:8080",
+  baseURL: "https://smartbackend-production-5756.up.railway.app/api",
   withCredentials: false,
 });
 
 // 🔐 Attach JWT token (EXCEPT for OPTIONS)
 API.interceptors.request.use(
   (config) => {
-    // 🚫 DO NOT attach token for preflight
     if (config.method?.toUpperCase() === "OPTIONS") {
       return config;
     }

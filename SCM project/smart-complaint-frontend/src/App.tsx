@@ -12,16 +12,23 @@ import "react-toastify/dist/ReactToastify.css";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 
-/* ================= PUBLIC PAGES ================= */
+/* ================= PUBLIC ================= */
 import Home from "./pages/Home";
 import AuthPage from "./pages/AuthPage";
+import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
-/* ================= USER PAGES ================= */
+/* ================= USER ================= */
+import UserLayout from "./layouts/UserLayout";
 import StudentDashboard from "./pages/StudentDashboard";
 import SubmitComplaint from "./pages/SubmitComplaint";
+import Help from "./pages/user/Help";
+import Notifications from "./pages/user/Notification";
+import Profile from "./pages/user/Profile";
+import ShareComplaint from "./pages/ShareComplaint";
+
 
 /* === MY COMPLAINTS === */
 import TotalComplaints from "./pages/my-complaints/TotalComplaints";
@@ -32,25 +39,19 @@ import RejectedComplaints from "./pages/my-complaints/RejectedComplaints";
 /* ================= ADMIN ================= */
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminComplaints from "./pages/admin/AdminComplaints";
-import UsersList from "./pages/UsersList";
+
+import AdminUserList from "./pages/admin/AdminUserList";
 
 /* ================= SUPER ADMIN ================= */
-import SuperAdminLogin from "./pages/super-admin/SuperAdminLogin";
-import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
-import SuperAdminForgotPassword from "./pages/SuperAdminForgotPassword";
-import SuperAdminResetPassword from "./pages/SuperAdminResetPassword";
 import SuperAdminLayout from "./layouts/SuperAdminLayout";
-
+import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
 import AdminList from "./pages/super-admin/AdminList";
 import UserList from "./pages/super-admin/UserList";
 import AuthorizedSignatory from "./pages/super-admin/AuthorizedSignatory";
-import Notifications from "./pages/super-admin/Notification";
-import Help from "./pages/super-admin/Help";
+import NotificationsSA from "./pages/user/Notification";
+import HelpSA from "./pages/user/Help";
 import AlertSentiment from "./pages/super-admin/AlertSentiment";
 import AuditLogs from "./pages/super-admin/AuditLog";
-
-/* ================= USER LAYOUT ================= */
-import UserLayout from "./layouts/UserLayout";
 
 const App: React.FC = () => {
   return (
@@ -58,38 +59,15 @@ const App: React.FC = () => {
       <ToastContainer position="top-right" autoClose={3000} />
 
       <Routes>
-        {/* PUBLIC */}
+        {/* ================= PUBLIC ================= */}
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* SUPER ADMIN (PUBLIC) */}
-        <Route path="/super-admin/login" element={<SuperAdminLogin />} />
-        <Route
-          path="/super-admin/forgot-password"
-          element={<SuperAdminForgotPassword />}
-        />
-        <Route
-          path="/super-admin/reset-password"
-          element={<SuperAdminResetPassword />}
-        />
-
-        {/* SUPER ADMIN (PROTECTED) */}
-        <Route path="/super-admin" element={<SuperAdminLayout />}>
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<SuperAdminDashboard />} />
-          <Route path="admin-list" element={<AdminList />} />
-          <Route path="users" element={<UserList />} />
-          <Route path="authorized-signatory" element={<AuthorizedSignatory />} />
-          <Route path="audit-logs" element={<AuditLogs />} />
-          <Route path="notifications" element={<Notifications />} />
-          <Route path="alerts" element={<AlertSentiment />} />
-          <Route path="help" element={<Help />} />
-        </Route>
-
-        {/* USER */}
+        {/* ================= USER ================= */}
         <Route
           path="/user"
           element={
@@ -99,8 +77,17 @@ const App: React.FC = () => {
           }
         >
           <Route index element={<Navigate to="dashboard" replace />} />
+
           <Route path="dashboard" element={<StudentDashboard />} />
           <Route path="submit-complaint" element={<SubmitComplaint />} />
+
+          {/* ✅ FIXED MISSING ROUTES */}
+          <Route path="help" element={<Help />} />
+          <Route path="notifications" element={<Notifications />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="share-complaint" element={<ShareComplaint />} />
+
+          {/* MY COMPLAINTS */}
           <Route path="my-complaints">
             <Route index element={<Navigate to="total" replace />} />
             <Route path="total" element={<TotalComplaints />} />
@@ -110,39 +97,46 @@ const App: React.FC = () => {
           </Route>
         </Route>
 
-        {/* ADMIN */}
-        <Route
-          path="/admin/dashboard"
-          element={
-            <ProtectedRoute role="ADMIN">
-              <Layout>
-                <AdminDashboard />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
 
+        
+                 /* ================= ADMIN ================= */
         <Route
-          path="/admin/complaints"
+          path="/admin"
           element={
             <ProtectedRoute role="ADMIN">
-              <Layout>
-                <AdminComplaints />
-              </Layout>
+              <Layout />
             </ProtectedRoute>
           }
-        />
+        >
+          {/* DEFAULT REDIRECT */}
+          <Route index element={<Navigate to="dashboard" replace />} />
+        
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="complaints" element={<AdminComplaints />} />
+        
+          {/* ✅ FIXED HERE */}
+          <Route path="users" element={<AdminUserList />} />
+        </Route>
 
+        {/* ================= SUPER ADMIN ================= */}
         <Route
-          path="/admin/users"
+          path="/super-admin"
           element={
-            <ProtectedRoute role="ADMIN">
-              <Layout>
-                <UsersList />
-              </Layout>
+            <ProtectedRoute role="SUPER_ADMIN">
+              <SuperAdminLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<SuperAdminDashboard />} />
+          <Route path="admin-list" element={<AdminList />} />
+          <Route path="users" element={<UserList />} />
+          <Route path="authorized-signatory" element={<AuthorizedSignatory />} />
+          <Route path="audit-logs" element={<AuditLogs />} />
+          <Route path="notifications" element={<NotificationsSA />} />
+          <Route path="alerts" element={<AlertSentiment />} />
+          <Route path="help" element={<HelpSA />} />
+        </Route>
       </Routes>
     </Router>
   );

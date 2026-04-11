@@ -8,6 +8,10 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts";
 import Card from "../components/Card";
 import { toast } from "react-toastify";
@@ -29,38 +33,37 @@ interface MonthlyData {
 }
 
 const Dashboard: React.FC = () => {
-  const [stats, setStats] = useState<{
-    total: number;
-    resolved: number;
-    pending: number;
-    monthly: MonthlyData[];
-  }>({
+  const [stats, setStats] = useState({
     total: 0,
     resolved: 0,
     pending: 0,
-    monthly: [],
+    rejected: 0,
+    monthly: [] as MonthlyData[],
+  });
+
+  const [sentiment, setSentiment] = useState({
+    positive: 0,
+    neutral: 0,
+    negative: 0,
   });
 
   const [loading, setLoading] = useState(true);
 
-  // -------------------------------------------------------
-  // FETCH ALL COMPLAINT DATA (Admin Protected)
-  // -------------------------------------------------------
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
 
-        // 🔐 Axios instance includes Authorization header
         const res = await API.get<Complaint[]>("/api/complaints/all");
         const complaints = res.data || [];
 
-        // Calculate statistics
+        // 📊 BASIC STATS
         const total = complaints.length;
         const resolved = complaints.filter((c) => c.status === "Resolved").length;
         const pending = complaints.filter((c) => c.status === "Pending").length;
+        const rejected = complaints.filter((c) => c.status === "Rejected").length;
 
-        // Monthly aggregation
+        // 📅 MONTHLY DATA
         const monthlyMap: Record<string, number> = {};
 
         complaints.forEach((c) => {
@@ -78,14 +81,47 @@ const Dashboard: React.FC = () => {
           })
         );
 
+        // 🤖 SENTIMENT ANALYSIS (Keyword-based)
+        let positive = 0;
+        let negative = 0;
+        let neutral = 0;
+
+        complaints.forEach((c) => {
+          const text = c.description.toLowerCase();
+
+          if (
+            text.includes("good") ||
+            text.includes("resolved") ||
+            text.includes("thanks")
+          ) {
+            positive++;
+          } else if (
+            text.includes("bad") ||
+            text.includes("delay") ||
+            text.includes("worst") ||
+            text.includes("complaint")
+          ) {
+            negative++;
+          } else {
+            neutral++;
+          }
+        });
+
         setStats({
           total,
           resolved,
           pending,
+          rejected,
           monthly: monthlyArray,
         });
+
+        setSentiment({
+          positive,
+          neutral,
+          negative,
+        });
+
       } catch (err: any) {
-        console.error(err);
         toast.error("Failed to load dashboard stats.");
       } finally {
         setLoading(false);
@@ -95,94 +131,135 @@ const Dashboard: React.FC = () => {
     fetchStats();
   }, []);
 
-  // -------------------------------------------------------
-  // LOADING SCREEN (Admin Experience)
-  // -------------------------------------------------------
+  // 🚀 LOADING UI
   if (loading) {
     return (
-      <div className="p-6 text-xl text-gray-700">
-        Loading dashboard statistics...
+      <div className="flex items-center justify-center h-screen text-xl text-gray-600">
+        🚀 Loading Dashboard...
       </div>
     );
   }
 
-  // -------------------------------------------------------
-  // MAIN UI
-  // -------------------------------------------------------
   return (
-    <div className="p-6 space-y-6">
-      {/* 🌟 GLASSMORPHISM HEADER */}
+    <div className="min-h-screen p-6 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 space-y-6">
+
+      {/* HEADER */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full p-6 rounded-3xl bg-white/20 backdrop-blur-xl shadow-xl 
-                   border border-white/30 bg-gradient-to-r from-indigo-500/40 to-purple-500/40"
+        className="p-6 rounded-3xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl"
       >
-        <h2 className="text-3xl font-extrabold text-white drop-shadow-md">
-          👋 Welcome Admin!
-        </h2>
-        <p className="text-white/90 mt-1 text-lg">
-          Here’s your system-wide complaint summary and analytics.
+        <h2 className="text-3xl font-bold">Dashboard Overview</h2>
+        <p className="text-indigo-100 mt-1">
+          Real-time complaint analytics & AI insights
         </p>
       </motion.div>
 
-      {/* 🌟 STATS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
+      {/* KPI CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <motion.div whileHover={{ scale: 1.05 }}>
-          <Card
-            title="Total Complaints"
-            value={stats.total.toString()}
-            color="bg-gradient-to-r from-blue-500 to-blue-700"
-          />
+          <Card title="Total" value={stats.total.toString()} color="bg-indigo-600" />
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.05 }}>
-          <Card
-            title="Resolved Complaints"
-            value={stats.resolved.toString()}
-            color="bg-gradient-to-r from-green-500 to-green-700"
-          />
+          <Card title="Resolved" value={stats.resolved.toString()} color="bg-green-600" />
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.05 }}>
-          <Card
-            title="Pending Complaints"
-            value={stats.pending.toString()}
-            color="bg-gradient-to-r from-yellow-400 to-yellow-600"
-          />
+          <Card title="Pending" value={stats.pending.toString()} color="bg-yellow-500" />
         </motion.div>
 
+        <motion.div whileHover={{ scale: 1.05 }}>
+          <Card title="Rejected" value={stats.rejected.toString()} color="bg-red-500" />
+        </motion.div>
       </div>
 
-      {/* 📊 MONTHLY CHART */}
-      <motion.div
-        className="bg-white shadow-2xl rounded-2xl p-6"
-        initial={{ opacity: 0, y: 25 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h3 className="text-xl font-semibold mb-4 text-gray-700">
-          Monthly Complaint Stats
+      {/* CHART + INSIGHTS */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* BAR CHART */}
+        <motion.div
+          className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl"
+        >
+          <h3 className="text-lg font-semibold mb-4 text-gray-700 dark:text-white">
+            Monthly Complaints
+          </h3>
+
+          {stats.monthly.length === 0 ? (
+            <p>No data available</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={stats.monthly}>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="complaints" fill="#6366f1" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </motion.div>
+
+        {/* QUICK INSIGHTS */}
+        <motion.div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl">
+          <h3 className="text-lg font-semibold mb-4 text-gray-700 dark:text-white">
+            Insights
+          </h3>
+
+          <ul className="space-y-2 text-gray-600 dark:text-gray-300 text-sm">
+            <li>📊 Total: {stats.total}</li>
+            <li>🟢 Resolved: {stats.resolved}</li>
+            <li>🟡 Pending: {stats.pending}</li>
+            <li>🔴 Rejected: {stats.rejected}</li>
+          </ul>
+        </motion.div>
+      </div>
+
+      {/* 🤖 AI SENTIMENT */}
+      <motion.div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl">
+        <h3 className="text-lg font-semibold mb-4 text-gray-700 dark:text-white">
+          AI Sentiment Analysis
         </h3>
 
-        {stats.monthly.length === 0 ? (
-          <p className="text-gray-500">No complaint data to display.</p>
-        ) : (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={stats.monthly}>
-              <XAxis dataKey="name" stroke="#555" />
-              <YAxis />
-              <Tooltip />
-              <Bar
-                dataKey="complaints"
-                fill="#4f46e5"
-                radius={[8, 8, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          {/* PIE */}
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: "Positive", value: sentiment.positive },
+                    { name: "Neutral", value: sentiment.neutral },
+                    { name: "Negative", value: sentiment.negative },
+                  ]}
+                  dataKey="value"
+                  outerRadius={80}
+                  label
+                >
+                  <Cell fill="#22c55e" />
+                  <Cell fill="#eab308" />
+                  <Cell fill="#ef4444" />
+                </Pie>
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* DETAILS */}
+          <div className="flex flex-col justify-center space-y-3 text-gray-700 dark:text-gray-300">
+            <p>🟢 Positive: {sentiment.positive}</p>
+            <p>🟡 Neutral: {sentiment.neutral}</p>
+            <p>🔴 Negative: {sentiment.negative}</p>
+
+            {sentiment.negative > sentiment.positive && (
+              <div className="p-3 bg-red-100 text-red-700 rounded-lg">
+                ⚠️ High negative complaints detected!
+              </div>
+            )}
+          </div>
+        </div>
       </motion.div>
+
     </div>
   );
 };

@@ -1,14 +1,21 @@
 // src/components/Layout.tsx
+
 import React, { useState } from "react";
+import { Outlet } from "react-router-dom";
 import Sidebar from "./sidebar";
 import Navbar from "./Navbar";
 
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+type Role = "USER" | "ADMIN" | "SUPER_ADMIN";
+
+const Layout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
 
+  // 🔥 GET ROLE FROM LOCALSTORAGE (VERY IMPORTANT)
+  const role = (localStorage.getItem("role") as Role) || "USER";
+
   // Sidebar widths
-  const expandedWidth = 256;      // w-64
-  const collapsedWidth = 80;      // w-20 (better spacing)
+  const expandedWidth = 256;
+  const collapsedWidth = 80;
   const sidebarWidth = collapsed ? collapsedWidth : expandedWidth;
 
   return (
@@ -29,29 +36,34 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       {/* ===== MAIN WRAPPER ===== */}
       <div className="flex pt-[64px]">
-        {/* ----- FIXED SIDEBAR ----- */}
+        {/* ===== SIDEBAR ===== */}
         <div
           style={{
             position: "fixed",
-            top: 64, // below navbar
+            top: 64,
             bottom: 0,
             width: sidebarWidth,
             transition: "width 0.25s ease",
             zIndex: 40,
           }}
         >
-          <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+          {/* 🔥 PASS ROLE HERE */}
+          <Sidebar
+            collapsed={collapsed}
+            setCollapsed={setCollapsed}
+            role={role}
+          />
         </div>
 
-        {/* ----- PAGE CONTENT ----- */}
+        {/* ===== PAGE CONTENT ===== */}
         <main
           style={{
             marginLeft: sidebarWidth,
             transition: "margin-left 0.25s ease",
           }}
-          className="flex-1 p-6"
+          className="flex-1 p-6 overflow-y-auto"
         >
-          {children}
+          <Outlet />
         </main>
       </div>
     </div>

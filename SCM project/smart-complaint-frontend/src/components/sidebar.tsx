@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 
-type Role = "USER" | "SUPER_ADMIN";
+type Role = "USER" | "ADMIN" | "SUPER_ADMIN";
 
 type MenuItem = {
   label: string;
@@ -23,7 +23,6 @@ const Sidebar: React.FC<Props> = ({
 }) => {
   const location = useLocation();
 
-  const widthClass = collapsed ? "w-18" : "w-64";
   const pxWidth = collapsed ? 72 : 256;
 
   /* ================= USER MENU ================= */
@@ -31,6 +30,13 @@ const Sidebar: React.FC<Props> = ({
     { label: "Dashboard", path: "/user/dashboard", icon: "🏠" },
     { label: "Submit Complaint", path: "/user/submit-complaint", icon: "✏️" },
     { label: "My Complaints", path: "/user/my-complaints/total", icon: "📄" },
+  ];
+
+  /* ================= ADMIN MENU ================= */
+  const adminMenu: MenuItem[] = [
+    { label: "Dashboard", path: "/admin/dashboard", icon: "📊" },
+    { label: "Complaints", path: "/admin/complaints", icon: "📋" },
+    { label: "Users", path: "/admin/users", icon: "👥" }, // ✅ Already correct
   ];
 
   /* ================= SUPER ADMIN MENU ================= */
@@ -66,12 +72,18 @@ const Sidebar: React.FC<Props> = ({
     },
   ];
 
-  const menu = role === "SUPER_ADMIN" ? superAdminMenu : userMenu;
+  /* ================= ROLE SWITCH ================= */
+  const menu =
+    role === "ADMIN"
+      ? adminMenu
+      : role === "SUPER_ADMIN"
+      ? superAdminMenu
+      : userMenu;
 
   return (
     <aside
-      className={`h-full ${widthClass} bg-gradient-to-b from-indigo-600 to-purple-600 text-white shadow-xl`}
-      style={{ width: pxWidth, transition: "width 220ms ease" }}
+      className="h-full bg-gradient-to-b from-indigo-600 to-purple-600 text-white shadow-xl"
+      style={{ width: pxWidth, transition: "width 0.2s ease" }}
     >
       {/* HEADER */}
       <div className="p-4 flex items-center justify-between">
@@ -81,6 +93,8 @@ const Sidebar: React.FC<Props> = ({
             <h1 className="text-lg font-bold">
               {role === "SUPER_ADMIN"
                 ? "SCM Super Admin"
+                : role === "ADMIN"
+                ? "SCM Admin"
                 : "Smart Complaint"}
             </h1>
           )}
@@ -100,18 +114,20 @@ const Sidebar: React.FC<Props> = ({
       <nav className="mt-4">
         <ul className="space-y-2 px-3">
           {menu.map((item) => {
-            const isActive = location.pathname.startsWith(item.path);
+            // ✅ Improved active logic (fix edge cases)
+            const isActive =
+              location.pathname === item.path ||
+              location.pathname.startsWith(item.path + "/");
 
             return (
               <li key={item.label}>
                 <Link
                   to={item.path}
-                  className={`flex items-center justify-between gap-3 p-2 rounded transition
-                    ${
-                      isActive
-                        ? "bg-white text-indigo-700 font-semibold"
-                        : "hover:bg-white/20"
-                    }`}
+                  className={`flex items-center justify-between gap-3 p-2 rounded transition ${
+                    isActive
+                      ? "bg-white text-indigo-700 font-semibold"
+                      : "hover:bg-white/20"
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     <span>{item.icon}</span>

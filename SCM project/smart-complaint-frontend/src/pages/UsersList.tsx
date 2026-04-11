@@ -1,12 +1,11 @@
-// src/pages/UsersList.tsx
-
 import React, { useEffect, useState } from "react";
 import API from "../services/api";
 import { toast } from "react-toastify";
 
 type User = {
   id: number;
-  name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   role: string;
   createdAt?: string | null;
@@ -22,8 +21,8 @@ const UsersList: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // 🔐 Uses JWT-secured axios request
-      const res = await API.get<User[]>("/api/users/all");
+      // ✅ FIXED ENDPOINT
+      const res = await API.get<User[]>("/api/users");
 
       setUsers(res.data || []);
     } catch (err: any) {
@@ -55,7 +54,9 @@ const UsersList: React.FC = () => {
       {loading ? (
         <div className="p-6 bg-white rounded shadow">Loading users…</div>
       ) : error ? (
-        <div className="p-6 bg-yellow-50 text-red-700 rounded shadow">{error}</div>
+        <div className="p-6 bg-yellow-50 text-red-700 rounded shadow">
+          {error}
+        </div>
       ) : users.length === 0 ? (
         <div className="p-6 bg-white rounded shadow text-center">
           No users found.
@@ -75,13 +76,19 @@ const UsersList: React.FC = () => {
             <tbody>
               {users.map((u) => (
                 <tr key={u.id} className="border-t">
-                  <td className="px-4 py-3">{u.name ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    {u.firstName || u.lastName
+                      ? `${u.firstName ?? ""} ${u.lastName ?? ""}`
+                      : "—"}
+                  </td>
                   <td className="px-4 py-3">{u.email}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`inline-block px-2 py-1 text-sm rounded ${
                         u.role === "ADMIN"
                           ? "bg-green-100 text-green-800"
+                          : u.role === "SUPER_ADMIN"
+                          ? "bg-purple-100 text-purple-800"
                           : "bg-gray-100 text-gray-800"
                       }`}
                     >
@@ -89,7 +96,9 @@ const UsersList: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    {u.createdAt ? new Date(u.createdAt).toLocaleString() : "—"}
+                    {u.createdAt
+                      ? new Date(u.createdAt).toLocaleString()
+                      : "—"}
                   </td>
                 </tr>
               ))}

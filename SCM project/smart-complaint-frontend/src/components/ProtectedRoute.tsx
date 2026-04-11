@@ -2,32 +2,25 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 
 interface Props {
-  role?: string; // "USER" or "ADMIN"
+  role?: string;
   children: React.ReactNode;
 }
 
 const ProtectedRoute: React.FC<Props> = ({ role, children }) => {
-  const rawUser = localStorage.getItem("user");
-  const rawRole = localStorage.getItem("role"); // stored during login
+  const token = localStorage.getItem("token");
+  const rawRole = localStorage.getItem("role");
 
-  // No user logged in
-  if (!rawUser || !rawRole) {
+  // 🚫 Not logged in
+  if (!token || !rawRole) {
     return <Navigate to="/auth?mode=login" replace />;
   }
 
-  let userObj;
-  try {
-    userObj = JSON.parse(rawUser);
-  } catch {
-    return <Navigate to="/auth?mode=login" replace />;
-  }
-
-  // User role doesn't match required role
+  // 🚫 Role mismatch
   if (role && rawRole.toUpperCase() !== role.toUpperCase()) {
     return <Navigate to="/auth?mode=login" replace />;
   }
 
-  // All good → render the protected component
+  // ✅ Access allowed
   return <>{children}</>;
 };
 

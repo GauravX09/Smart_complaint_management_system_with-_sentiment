@@ -33,109 +33,148 @@ const StudentDashboard: React.FC = () => {
     monthly: [] as { name: string; complaints: number }[],
   });
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   useEffect(() => {
     if (!email) return;
+
+    setLoading(true);
 
     API.get<Complaint[]>(`/api/complaints/user/${email}`)
       .then((res) => {
         const data = res.data;
 
         const total = data.length;
-        const resolved = data.filter((c) => c.status === "Resolved").length;
-        const pending = data.filter((c) => c.status === "Pending").length;
-        const rejected = data.filter((c) => c.status === "Rejected").length;
 
+        const resolved = data.filter(
+          (c) => c.status?.toLowerCase() === "resolved"
+        ).length;
+
+        const pending = data.filter(
+          (c) => c.status?.toLowerCase() === "pending"
+        ).length;
+
+        const rejected = data.filter(
+          (c) => c.status?.toLowerCase() === "rejected"
+        ).length;
+
+        // Monthly aggregation (sorted)
         const monthMap: Record<string, number> = {};
+
         data.forEach((c) => {
-          const month = c.createdAt
-            ? new Date(c.createdAt).toLocaleString("default", {
-                month: "short",
-              })
-            : "N/A";
+          if (!c.createdAt) return;
+
+          const date = new Date(c.createdAt);
+          const month = date.toLocaleString("default", { month: "short" });
+
           monthMap[month] = (monthMap[month] || 0) + 1;
         });
 
-        const monthly = Object.keys(monthMap).map((m) => ({
-          name: m,
-          complaints: monthMap[m],
+        const monthly = Object.entries(monthMap).map(([name, complaints]) => ({
+          name,
+          complaints,
         }));
 
         setStats({ total, resolved, pending, rejected, monthly });
       })
-      .catch(() => {});
+      .catch(() => {
+        setError("Failed to load dashboard data");
+      })
+      .finally(() => setLoading(false));
   }, [email]);
 
   return (
     <div className="space-y-8">
-      {/* Welcome Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: -15 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-3xl p-6 md:p-8 text-white shadow-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500"
-      >
-        <h2 className="text-3xl font-bold">👋 Welcome back!</h2>
-        <p className="mt-2 text-white/80 text-lg">
-          Track, manage, and monitor your complaints in one place.
-        </p>
-      </motion.div>
+      {/* 🔥 LOADING */}
+      {loading && (
+        <div className="text-center text-gray-500">Loading dashboard...</div>
+      )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Total Complaints"
-          value={stats.total}
-          icon={<ClipboardList />}
-          gradient="from-blue-500 to-blue-700"
-        />
-        <StatCard
-          title="Resolved"
-          value={stats.resolved}
-          icon={<CheckCircle />}
-          gradient="from-green-500 to-green-700"
-        />
-        <StatCard
-          title="Pending"
-          value={stats.pending}
-          icon={<Clock />}
-          gradient="from-yellow-500 to-yellow-600"
-        />
-        <StatCard
-          title="Rejected"
-          value={stats.rejected}
-          icon={<XCircle />}
-          gradient="from-red-500 to-red-700"
-        />
-      </div>
+      {/* ❌ ERROR */}
+      {error && (
+        <div className="text-red-500 text-center">{error}</div>
+      )}
 
-      {/* Chart Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6 md:p-8"
-      >
-        <h3 className="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-200">
-          📊 Monthly Complaint Activity
-        </h3>
+      {!loading && !error && (
+        <>
+          {/* Welcome */}
+          <motion.div
+            initial={{ opacity: 0, y: -15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-3xl p-6 md:p-8 text-white shadow-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500"
+          >
+            <h2 className="text-3xl font-bold">👋 Welcome back!</h2>
+            <p className="mt-2 text-white/80 text-lg">
+              Track, manage, and monitor your complaints in one place.
+            </p>
+          </motion.div>
 
-        <ResponsiveContainer width="100%" height={320}>
-          <BarChart data={stats.monthly}>
-            <XAxis dataKey="name" stroke="#888" />
-            <YAxis />
-            <Tooltip />
-            <Bar
-              dataKey="complaints"
-              fill="#7c3aed"
-              radius={[10, 10, 0, 0]}
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard
+              title="Total Complaints"
+              value={stats.total}
+              icon={<ClipboardList />}
+              gradient="from-blue-500 to-blue-700"
             />
-          </BarChart>
-        </ResponsiveContainer>
-      </motion.div>
+            <StatCard
+              title="Resolved"
+              value={stats.resolved}
+              icon={<CheckCircle />}
+              gradient="from-green-500 to-green-700"
+            />
+            <StatCard
+              title="Pending"
+              value={stats.pending}
+              icon={<Clock />}
+              gradient="from-yellow-500 to-yellow-600"
+            />
+            <StatCard
+              title="Rejected"
+              value={stats.rejected}
+              icon={<XCircle />}
+              gradient="from-red-500 to-red-700"
+            />
+          </div>
+
+          {/* Chart */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6 md:p-8"
+          >
+            <h3 className="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-200">
+              📊 Monthly Complaint Activity
+            </h3>
+
+            {stats.monthly.length === 0 ? (
+              <p className="text-gray-500 text-center">
+                No complaint data available
+              </p>
+            ) : (
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={stats.monthly}>
+                  <XAxis dataKey="name" stroke="#888" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar
+                    dataKey="complaints"
+                    fill="#7c3aed"
+                    radius={[10, 10, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </motion.div>
+        </>
+      )}
     </div>
   );
 };
 
 /* ----------------------------- */
-/* Reusable Stat Card Component  */
+/* Stat Card                     */
 /* ----------------------------- */
 interface StatCardProps {
   title: string;
@@ -156,7 +195,9 @@ const StatCard: React.FC<StatCardProps> = ({
     >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm uppercase tracking-wide opacity-90">{title}</p>
+          <p className="text-sm uppercase tracking-wide opacity-90">
+            {title}
+          </p>
           <p className="text-3xl font-bold mt-1">{value}</p>
         </div>
         <div className="opacity-80">{icon}</div>
