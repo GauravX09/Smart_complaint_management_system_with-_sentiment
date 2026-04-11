@@ -17,14 +17,15 @@ const Login: React.FC = () => {
     }
 
     try {
-      // ✅ FIXED API PATH (removed extra /api)
-      const res = await API.post("/auth/login", {
+      // ✅ FINAL CORRECT API PATH
+      const res = await API.post("/api/auth/login", {
         email,
         password,
       });
 
       const { token, role, status } = res.data;
 
+      // ✅ STATUS CHECK
       if (status !== "APPROVED") {
         toast.error("Account not approved");
         return;
@@ -53,9 +54,11 @@ const Login: React.FC = () => {
     } catch (error: any) {
       console.error(error);
 
-      // ✅ Better error handling
+      // ✅ Proper backend error handling
       if (error.response?.data?.message) {
         toast.error(error.response.data.message);
+      } else if (error.response?.data) {
+        toast.error(error.response.data);
       } else {
         toast.error("Login failed");
       }
@@ -64,7 +67,6 @@ const Login: React.FC = () => {
 
   // ================= GOOGLE LOGIN =================
   const handleGoogleLogin = () => {
-    // ✅ FIXED URL (removed localhost)
     window.location.href =
       "https://smartbackend-production-5756.up.railway.app/oauth2/authorization/google";
   };
@@ -125,7 +127,7 @@ const Login: React.FC = () => {
           >
             <img
               src="https://img.icons8.com/color/48/google-logo.png"
-              alt="google"
+              alt="Google login"
               className="w-5"
             />
             Sign in with Google
