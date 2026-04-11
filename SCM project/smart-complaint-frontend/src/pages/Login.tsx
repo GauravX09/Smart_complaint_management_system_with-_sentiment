@@ -23,8 +23,8 @@ const Login: React.FC = () => {
 
       const { token, role, status } = res.data;
 
-      // ✅ FIXED CONDITION (IMPORTANT)
-      if (role !== "SUPER_ADMIN" && status !== "APPROVED") {
+      // ✅ APPROVAL CHECK (FIXED)
+      if (status !== "APPROVED") {
         toast.error("Account not approved");
         return;
       }
@@ -35,7 +35,10 @@ const Login: React.FC = () => {
       localStorage.setItem("userEmail", email);
       localStorage.setItem(
         "user",
-        JSON.stringify({ email, name: email.split("@")[0] })
+        JSON.stringify({
+          email,
+          name: email.split("@")[0],
+        })
       );
 
       toast.success("Login Successful!");
@@ -52,25 +55,26 @@ const Login: React.FC = () => {
     } catch (error: any) {
       console.error(error);
 
-      if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else if (error.response?.data) {
-        toast.error(error.response.data);
-      } else {
-        toast.error("Login failed");
-      }
+      // ✅ STRONG ERROR HANDLING
+      const message =
+        error.response?.data?.message ||
+        error.response?.data ||
+        "Login failed";
+
+      toast.error(message);
     }
   };
 
   const handleGoogleLogin = () => {
     window.location.href =
-      "https://smartbackend-production-5756.up.railway.app/oauth2/authorization/google";
+      "https://smartbackend-production-1a43.up.railway.app/oauth2/authorization/google";
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600">
       <div className="flex w-[900px] h-[500px] bg-white rounded-xl shadow-2xl overflow-hidden">
-        
+
+        {/* LEFT SIDE */}
         <div className="w-1/2 bg-gradient-to-b from-blue-400 to-blue-600 text-white p-10 flex flex-col justify-center">
           <h2 className="text-3xl font-bold mb-4">Welcome to SCM</h2>
           <p className="text-sm opacity-90">
@@ -79,6 +83,7 @@ const Login: React.FC = () => {
           </p>
         </div>
 
+        {/* RIGHT SIDE */}
         <div className="w-1/2 p-10">
           <h2 className="text-2xl font-bold text-blue-600 mb-6">
             Login
@@ -98,6 +103,9 @@ const Login: React.FC = () => {
             className="w-full p-3 border rounded-lg mb-2"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") loginUser();
+            }}
           />
 
           <p
