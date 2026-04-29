@@ -8,6 +8,7 @@ const AuthPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // ✅ ROLE FROM URL
   const query = new URLSearchParams(location.search);
   const queryRole = (query.get("role") || "user").toLowerCase();
 
@@ -32,18 +33,27 @@ const AuthPage: React.FC = () => {
 
       const { token, role: returnedRole, status } = res.data;
 
+      // ✅ APPROVAL CHECK
       if (status !== "APPROVED") {
         toast.error("Account not approved");
         return;
       }
 
+      // ✅ STORE DATA
       localStorage.setItem("token", token);
       localStorage.setItem("role", returnedRole);
-      localStorage.setItem("email", email);
-      localStorage.setItem("user", JSON.stringify({email,name: email.split("@")[0]}));
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          email,
+          name: email.split("@")[0],
+        })
+      );
 
       toast.success("Login Successful!");
 
+      // ✅ ROLE BASED REDIRECT
       if (returnedRole === "SUPER_ADMIN") {
         navigate("/super-admin/dashboard");
       } else if (returnedRole === "ADMIN") {
@@ -51,14 +61,23 @@ const AuthPage: React.FC = () => {
       } else {
         navigate("/user/dashboard");
       }
-    } catch {
-      toast.error("Invalid credentials");
+
+    } catch (error: any) {
+      console.error(error);
+
+      // ✅ STRONG ERROR HANDLING
+      const message =
+        error.response?.data?.message ||
+        error.response?.data ||
+        "Invalid credentials";
+
+      toast.error(message);
     }
   };
 
   const handleGoogleLogin = () => {
     window.location.href =
-      "http://localhost:8080/oauth2/authorization/google";
+      "https://smartbackend-production-f6cd.up.railway.app/oauth2/authorization/google";
   };
 
   return (
@@ -100,6 +119,9 @@ const AuthPage: React.FC = () => {
             className="w-full p-3 border rounded-lg mb-2"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") loginUser();
+            }}
           />
 
           <p
@@ -122,6 +144,7 @@ const AuthPage: React.FC = () => {
           >
             <img
               src="https://img.icons8.com/color/48/google-logo.png"
+              alt="Google"
               className="w-5"
             />
             Sign in with Google

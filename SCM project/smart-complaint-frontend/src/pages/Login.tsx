@@ -16,7 +16,7 @@ const Login: React.FC = () => {
     }
 
     try {
-      const res = await API.post("/api/login", {
+      const res = await API.post("/auth/login", {
         email,
         password,
       });
@@ -67,7 +67,7 @@ const Login: React.FC = () => {
 
   const handleGoogleLogin = () => {
     window.location.href =
-      "https://smartbackend-production-1a43.up.railway.app/oauth2/authorization/google";
+      "https://smartbackend-production-f6cd.up.railway.app/oauth2/authorization/google";
   };
 
   return (
