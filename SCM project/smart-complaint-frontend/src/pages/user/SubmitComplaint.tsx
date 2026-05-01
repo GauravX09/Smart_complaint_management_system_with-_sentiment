@@ -1,239 +1,244 @@
-import React, { useEffect, useState } from "react";
-import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import API from "../../services/api";
-import { Upload, Trash2, Eye } from "lucide-react";
 import { motion } from "framer-motion";
-
-interface User {
-  name: string;
-  email: string;
-}
-
-type MediaType = "image" | "video" | "audio";
-
-interface MediaFile {
-  file: File;
-  url: string;
-  type: MediaType;
-}
-
-const CATEGORIES = [
-  "Transportation",
-  "Drinking Water",
-  "Class",
-  "Electricity",
-  "Garbage",
-  "Faculty",
-  "Misbehavior",
-  "Ragging",
-  "Smoking",
-  "Documentation",
-];
+import { useNavigate } from "react-router-dom";
+import {
+  Image as ImageIcon,
+  Video,
+  Music,
+  User,
+  Mail,
+  FileText,
+  Upload,
+} from "lucide-react";
 
 const SubmitComplaint: React.FC = () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
   const navigate = useNavigate();
 
-  const [user, setUser] = useState<User | null>(null);
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
-  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
+  const [image, setImage] = useState<File | null>(null);
+  const [video, setVideo] = useState<File | null>(null);
+  const [audio, setAudio] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // ✅ FIXED USER LOAD (IMPORTANT)
-  useEffect(() => {
-    const rawUser = localStorage.getItem("user");
-    const email = localStorage.getItem("email");
-
-    if (rawUser) {
-      try {
-        setUser(JSON.parse(rawUser));
-      } catch {
-        setUser(null);
-      }
-    } else if (email) {
-      // 🔥 fallback if user object not stored
-      setUser({
-        name: email.split("@")[0],
-        email: email,
-      });
-    }
-  }, []);
-
-  // ================= MEDIA =================
-  const handleFileUpload = (file: File, type: MediaType) => {
-    const url = URL.createObjectURL(file);
-
-    setMediaFiles((prev) => [
-      ...prev.filter((m) => m.type !== type),
-      { file, url, type },
-    ]);
-
-    toast.success(`${type.toUpperCase()} selected`);
+  // 🔥 Dynamic min length
+  const getMinLength = () => {
+    if (video || audio) return 150;
+    if (image) return 200;
+    return 300;
   };
 
-  const removeFile = (type: MediaType) => {
-    setMediaFiles((prev) => {
-      const toRemove = prev.find((m) => m.type === type);
-      if (toRemove) URL.revokeObjectURL(toRemove.url);
-      return prev.filter((m) => m.type !== type);
-    });
-    toast.info("File removed");
-  };
+  const handleSubmit = async () => {
+    const minLength = getMinLength();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!user) {
-      toast.error("You must be logged in");
-      return;
+    if (!category) return alert("Please select category");
+    if (!description || description.length < minLength) {
+      return alert(`Description must be at least ${minLength} characters`);
     }
 
-    if (!category || !description.trim()) {
-      toast.error("Category and description are mandatory");
-      return;
-    }
+    const formData = new FormData();
+    formData.append("userName", user.name);
+    formData.append("userEmail", user.email);
+    formData.append("category", category);
+    formData.append("description", description);
+
+    if (image) formData.append("image", image);
+    if (video) formData.append("video", video);
+    if (audio) formData.append("audio", audio);
 
     try {
       setLoading(true);
-
-      const formData = new FormData();
-      formData.append("userName", user.name);
-      formData.append("userEmail", user.email);
-      formData.append("category", category);
-      formData.append("description", description.trim());
-
-      mediaFiles.forEach((m) => {
-        formData.append(m.type, m.file);
-      });
-
-      await API.post("/api/complaints/add", formData);
-
-      toast.success("Complaint submitted successfully");
-
-      mediaFiles.forEach((m) => URL.revokeObjectURL(m.url));
-
-      setCategory("");
-      setDescription("");
-      setMediaFiles([]);
-
+            await API.post("/api/complaints/add", formData,);
+      alert("Complaint submitted 🚀");
       navigate("/user/my-complaints/total");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to submit complaint");
+    } catch {
+      alert("Error submitting complaint ❌");
     } finally {
       setLoading(false);
     }
   };
 
-  const hasType = (t: MediaType) => mediaFiles.some((m) => m.type === t);
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6 space-y-6"
-    >
-      <h2 className="text-2xl font-bold text-indigo-600">
-        🚀 Submit New Complaint
-      </h2>
+    <div className="p-6 bg-gray-100 min-h-screen">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-      {!user ? (
-        <div className="text-center text-red-500">
-          Please login to submit a complaint.
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-5">
-          
+        {/* ================= LEFT FORM ================= */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="lg:col-span-2 bg-white rounded-2xl shadow p-6"
+        >
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-indigo-100 rounded-xl">
+              <FileText className="text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-indigo-600">
+                Submit New Complaint
+              </h2>
+              <p className="text-sm text-gray-500">
+                Please provide accurate details to resolve your issue faster.
+              </p>
+            </div>
+          </div>
+
           {/* USER INFO */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <input value={user.name} disabled className="input bg-gray-100" />
-            <input value={user.email} disabled className="input bg-gray-100" />
+          <h4 className="font-semibold text-indigo-500 mb-2">Your Information</h4>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="flex items-center border rounded-lg p-2 bg-gray-50">
+              <User size={16} className="mr-2 text-gray-500" />
+              <input
+                value={user.name}
+                disabled
+                className="bg-transparent outline-none w-full"
+              />
+            </div>
+
+            <div className="flex items-center border rounded-lg p-2 bg-gray-50">
+              <Mail size={16} className="mr-2 text-gray-500" />
+              <input
+                value={user.email}
+                disabled
+                className="bg-transparent outline-none w-full"
+              />
+            </div>
           </div>
 
           {/* CATEGORY */}
+          <h4 className="font-semibold text-indigo-500 mb-2">
+            Complaint Details
+          </h4>
+
           <select
-            value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="input w-full"
-            required
+            className="w-full border p-3 rounded-xl mb-4 focus:ring-2 focus:ring-indigo-400"
           >
-            <option value="">Select Complaint Category</option>
-            {CATEGORIES.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
+            <option value="">-- Select Complaint Category --</option>
+            <option>Electricity</option>
+            <option>Water</option>
+            <option>Internet</option>
+            <option>Roads</option>
+            <option>Sanitation</option>
+            <option>Noise</option>
+            <option>Other</option>
+            <option>Faculty</option>
+            <option>Infrastructure</option>
+            <option>Ragging</option>
+            <option>Smoking</option>
+            <option>Documentations</option>
+            <option>Garbage</option>
+            <option>Missbehaviour</option>
           </select>
 
           {/* DESCRIPTION */}
           <textarea
-            className="input w-full"
-            rows={5}
-            placeholder="Describe your issue..."
+            placeholder="Provide as much detail as possible about your issue..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            required
+            maxLength={1000}
+            className="w-full border p-3 rounded-xl h-32 focus:ring-2 focus:ring-indigo-400"
           />
 
-          {/* MEDIA */}
-          <div className="grid md:grid-cols-3 gap-4">
-            {(["image", "video", "audio"] as MediaType[]).map((type) => (
-              <label
-                key={type}
-                className="border rounded-xl p-4 cursor-pointer text-center hover:bg-indigo-50 transition"
-              >
-                <Upload className="mx-auto mb-2" />
-                Upload {type}
-                <input
-                  type="file"
-                  hidden
-                  accept={
-                    type === "image"
-                      ? "image/*"
-                      : type === "video"
-                      ? "video/*"
-                      : "audio/*"
-                  }
-                  onChange={(e) =>
-                    e.target.files &&
-                    handleFileUpload(e.target.files[0], type)
-                  }
-                />
-                <div className="text-xs mt-1">
-                  {hasType(type) ? "Selected ✅" : "No file"}
-                </div>
-              </label>
-            ))}
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <span>Minimum required: {getMinLength()} chars</span>
+            <span>{description.length}/1000</span>
           </div>
 
-          {/* FILE LIST */}
-          {mediaFiles.map((m) => (
-            <div
-              key={m.type}
-              className="flex justify-between items-center border p-3 rounded-lg"
-            >
-              <span>{m.file.name}</span>
-              <div className="flex gap-3">
-                <a href={m.url} target="_blank">
-                  <Eye size={18} />
-                </a>
-                <button type="button" onClick={() => removeFile(m.type)}>
-                  <Trash2 size={18} className="text-red-500" />
-                </button>
-              </div>
-            </div>
-          ))}
+          {/* MEDIA */}
+          <p className="mt-4 text-sm font-semibold text-indigo-500">
+            Add Supporting Media (Optional)
+          </p>
+          <p className="text-xs text-gray-500 mb-3">
+            Upload images, videos or audio to help better understand the issue.
+          </p>
+
+          <div className="grid grid-cols-3 gap-4">
+
+            {/* IMAGE */}
+            <label className="border rounded-xl p-4 text-center cursor-pointer hover:bg-indigo-50 transition">
+              <ImageIcon className="mx-auto mb-2 text-indigo-500" />
+              <p className="text-sm font-semibold">Upload Image</p>
+              <p className="text-xs text-gray-400">PNG, JPG (Max 5MB)</p>
+              <input hidden type="file" onChange={(e) => setImage(e.target.files?.[0] || null)} />
+              <p className="text-xs mt-1">{image?.name || "Choose File"}</p>
+            </label>
+
+            {/* VIDEO */}
+            <label className="border rounded-xl p-4 text-center cursor-pointer hover:bg-blue-50 transition">
+              <Video className="mx-auto mb-2 text-blue-500" />
+              <p className="text-sm font-semibold">Upload Video</p>
+              <p className="text-xs text-gray-400">MP4 (Max 20MB)</p>
+              <input hidden type="file" onChange={(e) => setVideo(e.target.files?.[0] || null)} />
+              <p className="text-xs mt-1">{video?.name || "Choose File"}</p>
+            </label>
+
+            {/* AUDIO */}
+            <label className="border rounded-xl p-4 text-center cursor-pointer hover:bg-green-50 transition">
+              <Music className="mx-auto mb-2 text-green-500" />
+              <p className="text-sm font-semibold">Upload Audio</p>
+              <p className="text-xs text-gray-400">MP3 (Max 10MB)</p>
+              <input hidden type="file" onChange={(e) => setAudio(e.target.files?.[0] || null)} />
+              <p className="text-xs mt-1">{audio?.name || "Choose File"}</p>
+            </label>
+          </div>
 
           {/* SUBMIT */}
           <button
-            type="submit"
+            onClick={handleSubmit}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2 rounded-xl"
+            className={`mt-6 w-full py-3 rounded-xl text-white font-semibold
+              bg-gradient-to-r from-indigo-500 to-pink-500
+              ${loading ? "opacity-60" : "hover:scale-105"}
+              transition`}
           >
             {loading ? "Submitting..." : "Submit Complaint"}
           </button>
-        </form>
-      )}
-    </motion.div>
+        </motion.div>
+
+        {/* ================= RIGHT SIDE ================= */}
+        <div className="space-y-4">
+
+          {/* Tips */}
+          <div className="bg-white rounded-xl p-4 shadow">
+            <h4 className="font-semibold mb-2">💡 Before You Submit</h4>
+            <ul className="text-sm text-gray-600 space-y-2">
+              <li>✔ Be clear & detailed</li>
+              <li>✔ Add supporting evidence</li>
+              <li>✔ Track updates later</li>
+              <li>✔ Follow guidelines</li>
+            </ul>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="bg-white rounded-xl p-4 shadow">
+            <h4 className="font-semibold mb-2">⚡ Quick Actions</h4>
+            <button className="w-full p-2 rounded bg-green-100 mb-2">
+              View My Complaints
+            </button>
+            <button className="w-full p-2 rounded bg-blue-100 mb-2">
+              Share Complaint Link
+            </button>
+            <button className="w-full p-2 rounded bg-purple-100">
+              Help & Support
+            </button>
+          </div>
+
+          {/* Emergency */}
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+            <h4 className="font-semibold text-red-600 mb-2">🚨 Emergency?</h4>
+            <p className="text-xs text-gray-600 mb-2">
+              For urgent issues, raise an emergency complaint.
+            </p>
+            <button className="w-full bg-red-500 text-white p-2 rounded">
+              Raise Emergency
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

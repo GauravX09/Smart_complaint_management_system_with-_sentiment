@@ -29,6 +29,7 @@ import Help from "./pages/user/Help";
 import Notifications from "./pages/user/Notification";
 import Profile from "./pages/user/Profile";
 import ShareComplaint from "./pages/user/ShareComplaint";
+import ComplaintDetails from "./pages/user/ComplaintDetails";
 
 
 /* === MY COMPLAINTS === */
@@ -87,6 +88,7 @@ const App: React.FC = () => {
           <Route path="notifications" element={<Notifications />} />
           <Route path="profile" element={<Profile />} />
           <Route path="share-complaint" element={<ShareComplaint />} />
+          <Route path="/user/complaints/:id" element={<ComplaintDetails />} />
 
           {/* MY COMPLAINTS */}
           <Route path="my-complaints">

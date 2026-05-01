@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import API from "../services/api";
+import API from "../../services/api";
 
 interface Complaint {
   id: number;
