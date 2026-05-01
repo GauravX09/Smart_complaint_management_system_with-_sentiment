@@ -6,7 +6,7 @@ type Role = "USER" | "ADMIN" | "SUPER_ADMIN";
 type MenuItem = {
   label: string;
   path: string;
-  icon: string;
+  icon: React.ReactNode;
   badge?: number;
 };
 
@@ -23,56 +23,45 @@ const Sidebar: React.FC<Props> = ({
 }) => {
   const location = useLocation();
 
-  const pxWidth = collapsed ? 72 : 256;
+  const width = collapsed ? 80 : 260;
 
-  /* ================= USER MENU ================= */
+  /* 🔥 ICONS (clean, not emoji) */
+  const Icon = (name: string) => {
+    const icons: any = {
+      dashboard: "📊",
+      complaints: "📋",
+      users: "👥",
+      admin: "👮",
+      logs: "📝",
+      alert: "🚨",
+      help: "❓",
+    };
+    return <span className="text-lg">{icons[name]}</span>;
+  };
+
+  /* ================= MENUS ================= */
+
   const userMenu: MenuItem[] = [
-    { label: "Dashboard", path: "/user/dashboard", icon: "🏠" },
-    { label: "Submit Complaint", path: "/user/submit-complaint", icon: "✏️" },
-    { label: "My Complaints", path: "/user/my-complaints/total", icon: "📄" },
+    { label: "Dashboard", path: "/user/dashboard", icon: Icon("dashboard") },
+    { label: "Submit", path: "/user/submit-complaint", icon: Icon("complaints") },
+    { label: "My Complaints", path: "/user/my-complaints/total", icon: Icon("complaints") },
   ];
 
-  /* ================= ADMIN MENU ================= */
   const adminMenu: MenuItem[] = [
-    { label: "Dashboard", path: "/admin/dashboard", icon: "📊" },
-    { label: "Complaints", path: "/admin/complaints", icon: "📋" },
-    { label: "Users", path: "/admin/users", icon: "👥" }, // ✅ Already correct
+    { label: "Dashboard", path: "/admin/dashboard", icon: Icon("dashboard") },
+    { label: "Complaints", path: "/admin/complaints", icon: Icon("complaints") },
+    { label: "Users", path: "/admin/users", icon: Icon("users") },
   ];
 
-  /* ================= SUPER ADMIN MENU ================= */
   const superAdminMenu: MenuItem[] = [
-    { label: "Dashboard", path: "/super-admin/dashboard", icon: "📊" },
-    { label: "Admin List", path: "/super-admin/admin-list", icon: "👮" },
-    { label: "User List", path: "/super-admin/users", icon: "👥" },
-    {
-      label: "Authorized Signatory",
-      path: "/super-admin/authorized-signatory",
-      icon: "✍️",
-    },
-    {
-      label: "Audit Logs",
-      path: "/super-admin/audit-logs",
-      icon: "📝",
-    },
-    {
-      label: "Notifications",
-      path: "/super-admin/notifications",
-      icon: "🔔",
-      badge: 2,
-    },
-    {
-      label: "Alert & Sentiment",
-      path: "/super-admin/alerts",
-      icon: "🚨",
-    },
-    {
-      label: "Help & Support",
-      path: "/super-admin/help",
-      icon: "❓",
-    },
+    { label: "Dashboard", path: "/super-admin/dashboard", icon: Icon("dashboard") },
+    { label: "Admins", path: "/super-admin/admin-list", icon: Icon("admin") },
+    { label: "Users", path: "/super-admin/users", icon: Icon("users") },
+    { label: "Audit Logs", path: "/super-admin/audit-logs", icon: Icon("logs") },
+    { label: "Alerts", path: "/super-admin/alerts", icon: Icon("alert") },
+    { label: "Help", path: "/super-admin/help", icon: Icon("help") },
   ];
 
-  /* ================= ROLE SWITCH ================= */
   const menu =
     role === "ADMIN"
       ? adminMenu
@@ -82,69 +71,69 @@ const Sidebar: React.FC<Props> = ({
 
   return (
     <aside
-      className="h-full bg-gradient-to-b from-indigo-600 to-purple-600 text-white shadow-xl"
-      style={{ width: pxWidth, transition: "width 0.2s ease" }}
+      className="h-full bg-white border-r border-gray-200 flex flex-col"
+      style={{ width, transition: "all 0.25s ease" }}
     >
-      {/* HEADER */}
-      <div className="p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">⚡</span>
-          {!collapsed && (
-            <h1 className="text-lg font-bold">
-              {role === "SUPER_ADMIN"
-                ? "SCM Super Admin"
-                : role === "ADMIN"
-                ? "SCM Admin"
-                : "Smart Complaint"}
-            </h1>
-          )}
-        </div>
+
+      {/* 🔥 HEADER */}
+      <div className="h-16 flex items-center justify-between px-4 border-b">
+        {!collapsed && (
+          <h1 className="text-md font-bold text-indigo-600">
+            Smart System
+          </h1>
+        )}
 
         {setCollapsed && (
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1 rounded bg-white/10 hover:bg-white/20"
+            className="text-gray-500 hover:text-indigo-600"
           >
             ☰
           </button>
         )}
       </div>
 
-      {/* MENU */}
-      <nav className="mt-4">
-        <ul className="space-y-2 px-3">
-          {menu.map((item) => {
-            // ✅ Improved active logic (fix edge cases)
-            const isActive =
-              location.pathname === item.path ||
-              location.pathname.startsWith(item.path + "/");
+      {/* 🔥 MENU */}
+      <div className="flex-1 px-2 py-4 space-y-1">
 
-            return (
-              <li key={item.label}>
-                <Link
-                  to={item.path}
-                  className={`flex items-center justify-between gap-3 p-2 rounded transition ${
-                    isActive
-                      ? "bg-white text-indigo-700 font-semibold"
-                      : "hover:bg-white/20"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span>{item.icon}</span>
-                    {!collapsed && <span>{item.label}</span>}
-                  </div>
+        {menu.map((item) => {
+          const active =
+            location.pathname === item.path ||
+            location.pathname.startsWith(item.path + "/");
 
-                  {!collapsed && item.badge && (
-                    <span className="bg-red-500 text-xs px-2 py-0.5 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+          return (
+            <Link
+              key={item.label}
+              to={item.path}
+              className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition
+              ${
+                active
+                  ? "bg-indigo-50 text-indigo-600"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                {item.icon}
+                {!collapsed && <span>{item.label}</span>}
+              </div>
+
+              {!collapsed && item.badge && (
+                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  {item.badge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+
+      </div>
+
+      {/* 🔥 FOOTER */}
+      {!collapsed && (
+        <div className="p-4 border-t text-xs text-gray-400">
+          Admin Panel v1.0
+        </div>
+      )}
     </aside>
   );
 };

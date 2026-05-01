@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import API from "../../services/api";
 import Loader from "../../components/Loader";
-import { motion } from "framer-motion";
 
 interface Complaint {
   id: number;
@@ -16,47 +15,28 @@ interface Complaint {
 const AdminComplaints: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [search, setSearch] = useState("");
 
   // ================= FETCH =================
+  const fetchComplaints = async () => {
+    try {
+      setLoading(true);
 
-     
-          const fetchComplaints = async () => {
-            try {
-              setLoading(true);
-          
-              // 🔥 DEBUG ALL STORAGE
-              console.log("LOCAL STORAGE:", localStorage);
-          
-              // 🔥 Try multiple keys (safe approach)
-              let email =
-                localStorage.getItem("userEmail") ||
-                JSON.parse(localStorage.getItem("user") || "{}")?.email ||
-                JSON.parse(localStorage.getItem("admin") || "{}")?.email;
-          
-              console.log("Extracted Email:", email);
-          
-              if (!email) {
-                alert("Email not found in localStorage");
-                return;
-              }
-          
-              const res = await API.get(
-                `/api/complaints/admin?email=${email}`
-              );
-          
-              console.log("API DATA:", res.data);
-          
-              setComplaints(res.data || []);
-            } catch (err) {
-              console.error("Error fetching complaints", err);
-            } finally {
-              setLoading(false);
-            }
-          };
-          
+      const email =
+        localStorage.getItem("userEmail") ||
+        JSON.parse(localStorage.getItem("user") || "{}")?.email ||
+        JSON.parse(localStorage.getItem("admin") || "{}")?.email;
 
-  
-        
+      if (!email) return;
+
+      const res = await API.get(`/api/complaints/admin?email=${email}`);
+      setComplaints(res.data || []);
+    } catch (err) {
+      console.error("Error fetching complaints", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ================= UPDATE STATUS =================
   const updateStatus = async (id: number, status: string) => {
@@ -74,50 +54,80 @@ const AdminComplaints: React.FC = () => {
 
   if (loading) return <Loader />;
 
+  // ================= FILTER =================
+  const filtered = complaints.filter((c) =>
+    c.userEmail.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="bg-gray-50 min-h-screen p-6 space-y-6">
 
       {/* HEADER */}
-      <h2 className="text-2xl font-bold text-gray-700">
-        📋 Department Complaints
-      </h2>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">
+            Department Complaints
+          </h2>
+          <p className="text-sm text-gray-500">
+            Manage and track all complaints
+          </p>
+        </div>
 
-      {/* TABLE */}
-      <div className="overflow-x-auto bg-white rounded-xl shadow-lg">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-gray-100 text-gray-700">
+        {/* SEARCH */}
+        <input
+          type="text"
+          placeholder="Search by email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+      </div>
+
+      {/* TABLE CARD */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+
+        <table className="w-full text-sm">
+
+          {/* HEADER */}
+          <thead className="bg-gray-50 text-gray-600">
             <tr>
-              <th className="p-3">ID</th>
-              <th className="p-3">Email</th>
-              <th className="p-3">Category</th>
-              <th className="p-3">Status</th>
-              <th className="p-3">Sentiment</th>
-              <th className="p-3">Score</th>
-              <th className="p-3">Actions</th>
+              <th className="p-4 text-left">ID</th>
+              <th>Email</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Sentiment</th>
+              <th>Score</th>
+              <th>Actions</th>
             </tr>
           </thead>
 
+          {/* BODY */}
           <tbody>
-            {complaints.map((c) => (
-              <motion.tr
+            {filtered.map((c) => (
+              <tr
                 key={c.id}
-                whileHover={{ scale: 1.01 }}
-                className={`border-b 
-                  ${
-                    c.sentiment === "NEGATIVE"
-                      ? "bg-red-50"
-                      : "bg-white"
-                  }`}
+                className="border-t hover:bg-gray-50 transition"
               >
-                <td className="p-3 font-medium">{c.id}</td>
-                <td className="p-3">{c.userEmail}</td>
-                <td className="p-3">{c.category}</td>
-                <td className="p-3">
+
+                <td className="p-4 font-medium text-gray-700">
+                  #{c.id}
+                </td>
+
+                <td className="text-gray-600">{c.userEmail}</td>
+
+                <td>
+                  <span className="px-2 py-1 text-xs rounded bg-indigo-50 text-indigo-600">
+                    {c.category}
+                  </span>
+                </td>
+
+                {/* STATUS */}
+                <td>
                   <span
-                    className={`px-2 py-1 rounded text-white text-xs ${
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       c.status === "RESOLVED"
-                        ? "bg-green-500"
-                        : "bg-yellow-500"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-yellow-100 text-yellow-700"
                     }`}
                   >
                     {c.status}
@@ -125,43 +135,60 @@ const AdminComplaints: React.FC = () => {
                 </td>
 
                 {/* SENTIMENT */}
-                <td className="p-3 font-semibold">
-                  {c.sentiment}
+                <td>
+                  <span
+                    className={`text-xs font-semibold ${
+                      c.sentiment === "NEGATIVE"
+                        ? "text-red-600"
+                        : c.sentiment === "POSITIVE"
+                        ? "text-green-600"
+                        : "text-yellow-600"
+                    }`}
+                  >
+                    {c.sentiment}
+                  </span>
                 </td>
 
-                <td className="p-3">
+                {/* SCORE */}
+                <td className="text-gray-700 font-medium">
                   {(c.sentimentScore * 100).toFixed(1)}%
                 </td>
 
                 {/* ACTIONS */}
-                <td className="p-3 space-x-2">
+                <td className="space-x-2">
 
-                  {/* RESOLVE */}
                   <button
                     onClick={() => updateStatus(c.id, "RESOLVED")}
-                    className="px-3 py-1 bg-green-500 text-white rounded"
+                    className="px-3 py-1 text-xs rounded-lg bg-green-500 hover:bg-green-600 text-white transition"
                   >
                     Resolve
                   </button>
 
-                  {/* PENDING */}
                   <button
                     onClick={() => updateStatus(c.id, "PENDING")}
-                    className="px-3 py-1 bg-yellow-500 text-white rounded"
+                    className="px-3 py-1 text-xs rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white transition"
                   >
                     Pending
                   </button>
 
-                  {/* OPEN (future page) */}
-                  <button className="px-3 py-1 bg-blue-500 text-white rounded">
+                  <button className="px-3 py-1 text-xs rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white transition">
                     Open
                   </button>
 
                 </td>
-              </motion.tr>
+
+              </tr>
             ))}
           </tbody>
         </table>
+
+        {/* EMPTY STATE */}
+        {filtered.length === 0 && (
+          <div className="p-6 text-center text-gray-500">
+            No complaints found
+          </div>
+        )}
+
       </div>
     </div>
   );

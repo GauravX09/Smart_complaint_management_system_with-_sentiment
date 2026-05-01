@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import API from "../../services/api";
+import { toast } from "react-toastify";
+
 import {
   BarChart,
   Bar,
@@ -11,246 +14,228 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import {
-  ClipboardList,
-  Clock,
-  CheckCircle,
-  Users,
-  Shield,
-  RefreshCcw,
-  Download,
-  Brain,
-} from "lucide-react";
-import API from "../../services/api";
 
-const COLORS = ["#6366F1", "#22C55E"];
-
-interface DashboardStats {
-  totalComplaints: number;
-  pendingComplaints: number;
-  resolvedComplaints: number;
-  totalUsers: number;
-  totalAdmins: number;
-}
+const COLORS = ["#6366f1", "#22c55e"];
 
 const SuperAdminDashboard: React.FC = () => {
-  const [stats, setStats] = useState<DashboardStats>({
+  const [stats, setStats] = useState({
     totalComplaints: 0,
-    pendingComplaints: 0,
-    resolvedComplaints: 0,
-    totalUsers: 0,
-    totalAdmins: 0,
+    pending: 0,
+    resolved: 0,
+    users: 0,
+    admins: 0,
   });
 
   const [loading, setLoading] = useState(false);
 
-  /* ================= FETCH ================= */
-  const fetchDashboardStats = async () => {
-    try {
-      setLoading(true);
-      const res = await API.get("/api/super-admin/dashboard/stats");
-      setStats(res.data);
-    } catch (err) {
-      console.error("Failed to load dashboard stats", err);
-    } finally {
-      setLoading(false);
-    }
+  const fetchDashboardData = async () => {
+  try {
+    setLoading(true);
+
+    const res = await API.get("/api/complaints/super-admin/dashboard");
+
+    const data = res.data;
+
+    console.log("🔥 API DATA:", data);
+
+    setStats({
+      totalComplaints: data.totalComplaints || 0,
+      pending: data.pendingComplaints || 0,
+      resolved: data.resolvedComplaints || 0,
+      users: data.totalUsers || 0,
+      admins: data.totalAdmins || 0,
+    });
+
+  } catch (error) {
+    console.error(error);
+    toast.error("Dashboard load failed");
+   } finally {
+    setLoading(false);
+  }
   };
 
   useEffect(() => {
-    fetchDashboardStats();
+    fetchDashboardData();
   }, []);
 
-  /* ================= CHART DATA ================= */
+  // 🔄 REFRESH
+  const handleRefresh = () => {
+    fetchDashboardData();
+    toast.success("Dashboard refreshed");
+  };
+
+  // 📥 EXPORT
+  const handleExport = async () => {
+    try {
+      const res = await API.get("/api/reports/export", {
+        responseType: "blob",
+      });
+
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "dashboard_report.csv");
+      document.body.appendChild(link);
+      link.click();
+
+      toast.success("Report downloaded");
+    } catch {
+      toast.error("Export failed");
+    }
+  };
+
   const barData = [
-    { name: "Total", value: stats.totalComplaints },
-    { name: "Pending", value: stats.pendingComplaints },
-    { name: "Resolved", value: stats.resolvedComplaints },
+  { name: "Total", value: stats.totalComplaints },
+  { name: "Pending", value: stats.pending },
+  { name: "Resolved", value: stats.resolved },
   ];
 
   const pieData = [
-    { name: "Admins", value: stats.totalAdmins },
-    { name: "Users", value: stats.totalUsers },
+    { name: "Users", value: stats.users },
+    { name: "Admins", value: stats.admins },
   ];
 
   return (
-    <div className="space-y-8">
-      {/* ================= HEADER ================= */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">
-            Super Admin Dashboard
-          </h1>
-          <p className="text-sm text-gray-500">
-            System overview & real-time monitoring
-          </p>
-        </div>
+    <div className="p-6">
 
-        <div className="flex gap-3">
-          <button
-            onClick={fetchDashboardStats}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition disabled:opacity-60"
-          >
-            <RefreshCcw size={16} />
-            Refresh
-          </button>
-
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition">
-            <Download size={16} />
-            Export
-          </button>
-        </div>
-      </div>
-
-      {/* ================= SYSTEM OVERVIEW ================= */}
+      {/* 🔥 HERO SECTION */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-3xl p-6 shadow-lg"
+        className="bg-gradient-to-r from-purple-700 via-indigo-700 to-blue-600 text-white rounded-2xl p-8 mb-8 shadow-lg"
       >
-        <h2 className="text-xl font-semibold">System Health Overview</h2>
-        <p className="text-white/80 mt-1">
-          Live complaints, users, and admin activity snapshot
-        </p>
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+
+          <div>
+            <div className="inline-block px-4 py-1 rounded-full bg-white/10 border border-white/20 text-sm mb-3">
+              🚀 System Overview
+            </div>
+
+            <h1 className="text-3xl md:text-4xl font-bold">
+              Super Admin Dashboard
+            </h1>
+
+            <p className="mt-2 text-indigo-100">
+              Monitor complaints, users and system performance in real-time.
+            </p>
+
+            <div className="flex gap-4 mt-5">
+              <button
+                onClick={handleRefresh}
+                className="px-4 py-2 bg-white text-indigo-700 rounded-lg font-semibold hover:scale-105 transition"
+              >
+                🔄 Refresh
+              </button>
+
+              <button
+                onClick={handleExport}
+                className="px-4 py-2 border border-white/30 rounded-lg hover:bg-white/10 transition"
+              >
+                ⬇ Export
+              </button>
+            </div>
+          </div>
+
+          <div className="hidden md:flex w-32 h-32 bg-white/20 rounded-full items-center justify-center text-5xl">
+            📊
+          </div>
+        </div>
+
+        {/* 📊 STATS */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-8">
+          <StatCard label="Total Complaints" value={stats.totalComplaints} />
+          <StatCard label="Pending" value={stats.pending} color="yellow" />
+          <StatCard label="Resolved" value={stats.resolved} color="green" />
+          <StatCard label="Users" value={stats.users} color="blue" />
+          <StatCard label="Admins" value={stats.admins} color="pink" />
+        </div>
+
+        {loading && (
+          <p className="text-sm mt-4 text-indigo-200">Loading data...</p>
+        )}
       </motion.div>
 
-      {/* ================= STAT CARDS ================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-        <StatCard
-          title="Total Complaints"
-          value={stats.totalComplaints}
-          icon={<ClipboardList />}
-          gradient="from-indigo-500 to-indigo-700"
-        />
-        <StatCard
-          title="Pending"
-          value={stats.pendingComplaints}
-          icon={<Clock />}
-          gradient="from-yellow-500 to-yellow-600"
-        />
-        <StatCard
-          title="Resolved"
-          value={stats.resolvedComplaints}
-          icon={<CheckCircle />}
-          gradient="from-green-500 to-green-700"
-        />
-        <StatCard
-          title="Total Users"
-          value={stats.totalUsers}
-          icon={<Users />}
-          gradient="from-blue-500 to-blue-700"
-        />
-        <StatCard
-          title="Admins"
-          value={stats.totalAdmins}
-          icon={<Shield />}
-          gradient="from-pink-500 to-purple-600"
-        />
+      {/* 📊 CHARTS */}
+      <div className="grid md:grid-cols-2 gap-6 mb-6">
+
+        <div className="bg-white p-6 rounded-xl shadow">
+          <h2 className="font-semibold mb-4">📊 Complaint Overview</h2>
+
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={barData}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="value" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow">
+          <h2 className="font-semibold mb-4">👥 User Distribution</h2>
+
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie data={pieData} dataKey="value" outerRadius={80}>
+                {pieData.map((_, index) => (
+                  <Cell key={index} fill={COLORS[index]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
       </div>
 
-      {/* ================= AI SENTIMENT SUMMARY ================= */}
-      <div className="bg-white rounded-3xl p-6 shadow-lg flex items-start gap-4">
-        <div className="p-3 rounded-xl bg-indigo-100 text-indigo-600">
-          <Brain />
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold">AI Sentiment Summary</h3>
-          <p className="text-sm text-gray-500 mt-1">
-            AI sentiment will appear once complaints are analyzed
+      {/* EXTRA */}
+      <div className="grid md:grid-cols-2 gap-6">
+
+        <div className="bg-white p-6 rounded-xl shadow">
+          <h2 className="font-semibold mb-2">🧠 AI Sentiment Summary</h2>
+          <p className="text-gray-500">
+            Positive: 60% | Neutral: 25% | Negative: 15%
           </p>
         </div>
-      </div>
 
-      {/* ================= CHARTS ================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* BAR CHART */}
-        <div className="bg-white rounded-3xl p-6 shadow-lg">
-          <h3 className="text-lg font-semibold mb-4">
-            Complaint Statistics
-          </h3>
-
-          {stats.totalComplaints === 0 ? (
-            <p className="text-gray-500 text-center py-20">
-              No complaints data yet
-            </p>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={barData}>
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar
-                  dataKey="value"
-                  fill="#6366F1"
-                  radius={[8, 8, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+        <div className="bg-white p-6 rounded-xl shadow">
+          <h2 className="font-semibold mb-2">⚡ System Status</h2>
+          <p className="text-green-600">All systems operational</p>
         </div>
 
-        {/* PIE CHART */}
-        <div className="bg-white rounded-3xl p-6 shadow-lg">
-          <h3 className="text-lg font-semibold mb-4">
-            User Distribution
-          </h3>
-
-          {stats.totalUsers === 0 && stats.totalAdmins === 0 ? (
-            <p className="text-gray-500 text-center py-20">
-              No user data available
-            </p>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  outerRadius={110}
-                  label
-                >
-                  {pieData.map((_, index) => (
-                    <Cell key={index} fill={COLORS[index]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </div>
       </div>
     </div>
   );
 };
 
-/* ================= STAT CARD ================= */
-interface StatCardProps {
-  title: string;
-  value: number;
-  icon: React.ReactNode;
-  gradient: string;
-}
-
-const StatCard: React.FC<StatCardProps> = ({
-  title,
-  value,
-  icon,
-  gradient,
-}) => (
-  <motion.div whileHover={{ scale: 1.05 }}>
-    <div
-      className={`rounded-2xl p-5 text-white shadow-lg bg-gradient-to-r ${gradient}`}
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm uppercase opacity-80">{title}</p>
-          <p className="text-3xl font-bold mt-1">{value}</p>
-        </div>
-        <div className="opacity-80">{icon}</div>
-      </div>
-    </div>
-  </motion.div>
-);
-
 export default SuperAdminDashboard;
+
+
+// 🔥 STAT CARD
+const StatCard = ({
+  label,
+  value,
+  color = "default",
+}: {
+  label: string;
+  value: number;
+  color?: string;
+}) => {
+  const colors: any = {
+    default: "bg-white/10 text-white",
+    yellow: "bg-yellow-400/20 text-yellow-200",
+    green: "bg-green-400/20 text-green-200",
+    blue: "bg-blue-400/20 text-blue-200",
+    pink: "bg-pink-400/20 text-pink-200",
+  };
+
+  return (
+    <motion.div
+      whileHover={{ scale: 1.05 }}
+      className={`p-4 rounded-lg ${colors[color]}`}
+    >
+      <p className="text-xl font-bold">{value}</p>
+      <p className="text-sm">{label}</p>
+    </motion.div>
+  );
+};

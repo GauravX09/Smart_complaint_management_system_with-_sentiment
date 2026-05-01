@@ -39,15 +39,21 @@ const AuthPage: React.FC = () => {
         return;
       }
 
-      // ✅ STORE DATA
+      // 🔥 FIX: Extract username from email
+      const username = email.split("@")[0];
+
+      // ✅ STORE DATA (FINAL CORRECT STRUCTURE)
       localStorage.setItem("token", token);
       localStorage.setItem("role", returnedRole);
+      localStorage.setItem("username", username);
       localStorage.setItem("userEmail", email);
+
       localStorage.setItem(
         "user",
         JSON.stringify({
+          username,
           email,
-          name: email.split("@")[0],
+          role: returnedRole,
         })
       );
 
@@ -65,7 +71,6 @@ const AuthPage: React.FC = () => {
     } catch (error: any) {
       console.error(error);
 
-      // ✅ STRONG ERROR HANDLING
       const message =
         error.response?.data?.message ||
         error.response?.data ||

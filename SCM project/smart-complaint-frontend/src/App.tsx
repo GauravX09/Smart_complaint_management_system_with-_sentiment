@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 
 import { ToastContainer } from "react-toastify";
+//@ts-ignore
 import "react-toastify/dist/ReactToastify.css";
 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -22,12 +23,12 @@ import ResetPassword from "./pages/ResetPassword";
 
 /* ================= USER ================= */
 import UserLayout from "./layouts/UserLayout";
-import StudentDashboard from "./pages/StudentDashboard";
-import SubmitComplaint from "./pages/SubmitComplaint";
+import StudentDashboard from "./pages/user/StudentDashboard";
+import SubmitComplaint from "./pages/user/SubmitComplaint";
 import Help from "./pages/user/Help";
 import Notifications from "./pages/user/Notification";
 import Profile from "./pages/user/Profile";
-import ShareComplaint from "./pages/ShareComplaint";
+import ShareComplaint from "./pages/user/ShareComplaint";
 
 
 /* === MY COMPLAINTS === */
@@ -37,7 +38,7 @@ import ResolvedComplaints from "./pages/my-complaints/ResolvedComplaints";
 import RejectedComplaints from "./pages/my-complaints/RejectedComplaints";
 
 /* ================= ADMIN ================= */
-import AdminDashboard from "./pages/AdminDashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminComplaints from "./pages/admin/AdminComplaints";
 
 import AdminUserList from "./pages/admin/AdminUserList";
@@ -66,7 +67,6 @@ const App: React.FC = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-
         {/* ================= USER ================= */}
         <Route
           path="/user"
@@ -76,12 +76,13 @@ const App: React.FC = () => {
             </ProtectedRoute>
           }
         >
+          {/* ✅ ALL CHILD ROUTES MUST BE INSIDE */}
+        
           <Route index element={<Navigate to="dashboard" replace />} />
-
+        
           <Route path="dashboard" element={<StudentDashboard />} />
           <Route path="submit-complaint" element={<SubmitComplaint />} />
-
-          {/* ✅ FIXED MISSING ROUTES */}
+        
           <Route path="help" element={<Help />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="profile" element={<Profile />} />

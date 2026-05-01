@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import API from "../services/api";
+import API from "../../services/api";
 import { Upload, Trash2, Eye } from "lucide-react";
 import { motion } from "framer-motion";
 

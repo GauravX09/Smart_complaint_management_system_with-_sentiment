@@ -1,32 +1,28 @@
-// src/pages/Home.tsx
 import React from "react";
 import HomeNavbar from "../components/HomeNavbar";
 import HeroSection from "../components/HeroSection";
+import HowItWorks from "../components/HowItWorks";
 import Features from "../components/Features";
-import Stats from "../components/Stats";
+import Testimonials from "../components/Testimonials";
+import CTASection from "../components/CTASection";
 import Footer from "../components/Footer";
 import PageTransition from "../components/PageTransition";
 
 const Home: React.FC = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      {/* Navbar (fixed) */}
+      
       <HomeNavbar />
 
-      {/* Smooth fade/slide transition */}
       <PageTransition>
-        {/* HERO */}
         <HeroSection />
-
-        {/* FEATURES */}
+        <HowItWorks />
         <Features />
-
-        {/* STATS */}
-        <Stats />
-
-        {/* FOOTER */}
+        <Testimonials />
+        <CTASection />
         <Footer />
       </PageTransition>
+
     </div>
   );
 };

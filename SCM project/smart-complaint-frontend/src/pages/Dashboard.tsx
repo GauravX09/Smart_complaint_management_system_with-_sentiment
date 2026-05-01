@@ -13,7 +13,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import Card from "../components/Card";
+import Card from "../components/ui/Card";
 import { toast } from "react-toastify";
 
 // Types
@@ -158,19 +158,31 @@ const Dashboard: React.FC = () => {
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <motion.div whileHover={{ scale: 1.05 }}>
-          <Card title="Total" value={stats.total.toString()} color="bg-indigo-600" />
+          <Card className="bg-indigo-600">
+            <h3 className="text-lg font-semibold text-white">Total</h3>
+            <p className="text-2xl font-bold text-white">{stats.total}</p>
+          </Card>
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.05 }}>
-          <Card title="Resolved" value={stats.resolved.toString()} color="bg-green-600" />
+          <Card className="bg-green-600">
+            <h3 className="text-lg font-semibold text-white">Resolved</h3>
+            <p className="text-2xl font-bold text-white">{stats.resolved}</p>
+          </Card>
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.05 }}>
-          <Card title="Pending" value={stats.pending.toString()} color="bg-yellow-500" />
+          <Card className="bg-yellow-500">
+            <h3 className="text-lg font-semibold text-white">Pending</h3>
+            <p className="text-2xl font-bold text-white">{stats.pending}</p>
+          </Card>
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.05 }}>
-          <Card title="Rejected" value={stats.rejected.toString()} color="bg-red-500" />
+          <Card className="bg-red-500">
+            <h3 className="text-lg font-semibold text-white">Rejected</h3>
+            <p className="text-2xl font-bold text-white">{stats.rejected}</p>
+          </Card>
         </motion.div>
       </div>
 

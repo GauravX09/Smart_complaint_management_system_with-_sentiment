@@ -9,6 +9,7 @@
 /* ============================= */
 
 html,
+
 body {
   height: 100%;
 }
@@ -61,5 +62,5 @@ body {
 /* ============================= */
 
 * {
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }

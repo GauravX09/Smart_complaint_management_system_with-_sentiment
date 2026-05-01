@@ -16,7 +16,7 @@ const Login: React.FC = () => {
     }
 
     try {
-      const res = await API.post("/auth/login", {
+      const res = await API.post("/api/auth/login", {
         email,
         password,
       });
@@ -33,6 +33,7 @@ const Login: React.FC = () => {
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
       localStorage.setItem("userEmail", email);
+      
       localStorage.setItem(
         "user",
         JSON.stringify({
