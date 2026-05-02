@@ -31,16 +31,26 @@ const NotificationDropdown: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!user?.email) return;
+  if (!user?.email) return;
 
-    fetchNotifications();
+  const eventSource = new EventSource(
+    `/api/notifications/stream?email=${user.email}`
+  );
 
-    // 🔥 AUTO REFRESH (every 10 sec)
-    const interval = setInterval(fetchNotifications, 10000);
+  eventSource.onmessage = (event) => {
+    const newNotification = {
+      id: Date.now(),
+      title: "New Update",
+      message: event.data,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    };
 
-    return () => clearInterval(interval);
-  }, [user.email]);
+    setNotifications((prev) => [newNotification, ...prev]);
+  };
 
+  return () => eventSource.close();
+}, [user.email]);
   // ================= MARK AS READ =================
   const markAsRead = async (id: number) => {
     try {

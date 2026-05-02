@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import API from "../../services/api";
 import Loader from "../../components/Loader";
+import { useNavigate } from "react-router-dom";
 
 interface Complaint {
   id: number;
@@ -12,10 +13,26 @@ interface Complaint {
   sentimentScore: number;
 }
 
+const getPriority = (score: number) => {
+  if (score >= 0.75) return "HIGH";
+  if (score >= 0.4) return "MEDIUM";
+  return "LOW";
+};
+
+const priorityWeight: any = {
+  HIGH: 3,
+  MEDIUM: 2,
+  LOW: 1,
+};
+
 const AdminComplaints: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [priorityFilter, setPriorityFilter] = useState("ALL");
+
+  const navigate = useNavigate();
 
   // ================= FETCH =================
   const fetchComplaints = async () => {
@@ -27,25 +44,19 @@ const AdminComplaints: React.FC = () => {
         JSON.parse(localStorage.getItem("user") || "{}")?.email ||
         JSON.parse(localStorage.getItem("admin") || "{}")?.email;
 
-      if (!email) return;
-
       const res = await API.get(`/api/complaints/admin?email=${email}`);
       setComplaints(res.data || []);
     } catch (err) {
-      console.error("Error fetching complaints", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  // ================= UPDATE STATUS =================
+  // ================= UPDATE =================
   const updateStatus = async (id: number, status: string) => {
-    try {
-      await API.put(`/api/complaints/${id}/status?status=${status}`);
-      fetchComplaints();
-    } catch (err) {
-      console.error("Status update failed", err);
-    }
+    await API.put(`/api/complaints/${id}/status?status=${status}`);
+    fetchComplaints();
   };
 
   useEffect(() => {
@@ -54,125 +65,144 @@ const AdminComplaints: React.FC = () => {
 
   if (loading) return <Loader />;
 
-  // ================= FILTER =================
-  const filtered = complaints.filter((c) =>
-    c.userEmail.toLowerCase().includes(search.toLowerCase())
-  );
+  // ================= FILTER + SORT =================
+  const filtered = complaints
+    .map((c) => ({
+      ...c,
+      priority: getPriority(c.sentimentScore),
+    }))
+    .filter((c) =>
+      c.userEmail.toLowerCase().includes(search.toLowerCase())
+    )
+    .filter((c) =>
+      statusFilter === "ALL" ? true : c.status === statusFilter
+    )
+    .filter((c) =>
+      priorityFilter === "ALL" ? true : c.priority === priorityFilter
+    )
+    .sort(
+      (a, b) =>
+        priorityWeight[b.priority] - priorityWeight[a.priority]
+    );
 
   return (
-    <div className="bg-gray-50 min-h-screen p-6 space-y-6">
+    <div className="p-6 bg-gray-50 min-h-screen space-y-6">
 
       {/* HEADER */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center bg-gradient-to-r from-indigo-600 to-purple-600 p-5 rounded-2xl text-white shadow-lg">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">
-            Department Complaints
-          </h2>
-          <p className="text-sm text-gray-500">
-            Manage and track all complaints
+          <h2 className="text-xl font-semibold">Admin Complaints</h2>
+          <p className="text-sm opacity-80">
+            Smart complaint monitoring system
           </p>
         </div>
 
-        {/* SEARCH */}
         <input
-          type="text"
-          placeholder="Search by email..."
+          placeholder="Search email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+          className="px-4 py-2 rounded-lg text-black"
         />
       </div>
 
-      {/* TABLE CARD */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* FILTERS */}
+      <div className="flex gap-4">
+
+        <select
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-2 border rounded-lg"
+        >
+          <option value="ALL">All Status</option>
+          <option value="PENDING">Pending</option>
+          <option value="RESOLVED">Resolved</option>
+        </select>
+
+        <select
+          onChange={(e) => setPriorityFilter(e.target.value)}
+          className="px-3 py-2 border rounded-lg"
+        >
+          <option value="ALL">All Priority</option>
+          <option value="HIGH">High</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="LOW">Low</option>
+        </select>
+
+      </div>
+
+      {/* TABLE */}
+      <div className="bg-white rounded-2xl shadow border overflow-hidden">
 
         <table className="w-full text-sm">
-
-          {/* HEADER */}
-          <thead className="bg-gray-50 text-gray-600">
+          <thead className="bg-gray-100 text-gray-600">
             <tr>
-              <th className="p-4 text-left">ID</th>
+              <th className="p-4">ID</th>
               <th>Email</th>
               <th>Category</th>
+              <th>Priority</th>
               <th>Status</th>
               <th>Sentiment</th>
-              <th>Score</th>
-              <th>Actions</th>
+              <th>Action</th>
             </tr>
           </thead>
 
-          {/* BODY */}
           <tbody>
             {filtered.map((c) => (
-              <tr
-                key={c.id}
-                className="border-t hover:bg-gray-50 transition"
-              >
+              <tr key={c.id} className="border-t hover:bg-gray-50">
 
-                <td className="p-4 font-medium text-gray-700">
-                  #{c.id}
-                </td>
+                <td className="p-4 font-semibold">#{c.id}</td>
 
-                <td className="text-gray-600">{c.userEmail}</td>
+                <td>{c.userEmail}</td>
 
                 <td>
-                  <span className="px-2 py-1 text-xs rounded bg-indigo-50 text-indigo-600">
+                  <span className="bg-indigo-100 text-indigo-600 px-2 py-1 rounded">
                     {c.category}
+                  </span>
+                </td>
+
+                {/* PRIORITY */}
+                <td>
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${
+                      c.priority === "HIGH"
+                        ? "bg-red-100 text-red-600"
+                        : c.priority === "MEDIUM"
+                        ? "bg-yellow-100 text-yellow-600"
+                        : "bg-green-100 text-green-600"
+                    }`}
+                  >
+                    {c.priority}
                   </span>
                 </td>
 
                 {/* STATUS */}
                 <td>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      c.status === "RESOLVED"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
-                  >
+                  <span className="text-xs px-2 py-1 rounded bg-gray-200">
                     {c.status}
                   </span>
                 </td>
 
                 {/* SENTIMENT */}
                 <td>
-                  <span
-                    className={`text-xs font-semibold ${
-                      c.sentiment === "NEGATIVE"
-                        ? "text-red-600"
-                        : c.sentiment === "POSITIVE"
-                        ? "text-green-600"
-                        : "text-yellow-600"
-                    }`}
-                  >
-                    {c.sentiment}
+                  <span className="font-semibold">
+                    {(c.sentimentScore * 100).toFixed(0)}%
                   </span>
-                </td>
-
-                {/* SCORE */}
-                <td className="text-gray-700 font-medium">
-                  {(c.sentimentScore * 100).toFixed(1)}%
                 </td>
 
                 {/* ACTIONS */}
                 <td className="space-x-2">
 
                   <button
-                    onClick={() => updateStatus(c.id, "RESOLVED")}
-                    className="px-3 py-1 text-xs rounded-lg bg-green-500 hover:bg-green-600 text-white transition"
+                    onClick={() => navigate(`/admin/complaints/${c.id}`)}
+                    className="px-3 py-1 bg-indigo-500 text-white rounded-lg hover:scale-105 transition"
                   >
-                    Resolve
+                    Open
                   </button>
 
                   <button
-                    onClick={() => updateStatus(c.id, "PENDING")}
-                    className="px-3 py-1 text-xs rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white transition"
+                    onClick={() => updateStatus(c.id, "RESOLVED")}
+                    className="px-3 py-1 bg-green-500 text-white rounded-lg"
                   >
-                    Pending
-                  </button>
-
-                  <button className="px-3 py-1 text-xs rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white transition">
-                    Open
+                    Resolve
                   </button>
 
                 </td>
@@ -182,13 +212,11 @@ const AdminComplaints: React.FC = () => {
           </tbody>
         </table>
 
-        {/* EMPTY STATE */}
         {filtered.length === 0 && (
           <div className="p-6 text-center text-gray-500">
             No complaints found
           </div>
         )}
-
       </div>
     </div>
   );

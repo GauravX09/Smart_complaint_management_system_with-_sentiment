@@ -41,6 +41,7 @@ import RejectedComplaints from "./pages/my-complaints/RejectedComplaints";
 /* ================= ADMIN ================= */
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminComplaints from "./pages/admin/AdminComplaints";
+import AdminComplaintDetails from "./pages/admin/AdminComplaintDetails";
 
 import AdminUserList from "./pages/admin/AdminUserList";
 
@@ -54,6 +55,7 @@ import NotificationsSA from "./pages/user/Notification";
 import HelpSA from "./pages/user/Help";
 import AlertSentiment from "./pages/super-admin/AlertSentiment";
 import AuditLogs from "./pages/super-admin/AuditLog";
+
 
 const App: React.FC = () => {
   return (
@@ -113,7 +115,7 @@ const App: React.FC = () => {
         >
           {/* DEFAULT REDIRECT */}
           <Route index element={<Navigate to="dashboard" replace />} />
-        
+          <Route path="/admin/complaints/:id" element={<AdminComplaintDetails />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="complaints" element={<AdminComplaints />} />
         

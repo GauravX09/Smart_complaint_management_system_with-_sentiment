@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import MediaPreviewModal from "../../components/MediaPreviewModal";
 import {
   getComplaint,
   raiseEmergency,
@@ -108,6 +109,30 @@ const ComplaintDetails: React.FC = () => {
     }
   };
 
+  const getTimelineSteps = () => {
+  const steps = [
+    { label: "Submitted", key: "CREATED" },
+    { label: "In Progress", key: "IN_PROGRESS" },
+    { label: "Resolved", key: "RESOLVED" },
+  ];
+  //@ts-ignore
+  const status = complaint.status;
+
+  return steps.map((step, index) => {
+    let active = false;
+
+    if (status === "PENDING" && index === 0) active = true;
+    if (status === "IN_PROGRESS" && index <= 1) active = true;
+    if (status === "RESOLVED" && index <= 2) active = true;
+
+    return { ...step, active };
+  });
+};
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewType, setPreviewType] = useState<"image" | "video" | "audio">("image");
+  const [previewSrc, setPreviewSrc] = useState("");
+
   if (loading) return <p className="p-6">Loading...</p>;
   if (!complaint) return <p className="p-6">No data found</p>;
 
@@ -115,10 +140,75 @@ const ComplaintDetails: React.FC = () => {
   const BASE_URL = "http://localhost:8080";
 
   return (
-    <div className="p-6 grid grid-cols-4 gap-6">
+    <>
+      <MediaPreviewModal
+        isOpen={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        type={previewType}
+        src={previewSrc}
+      />
+      <div className="p-6 grid grid-cols-4 gap-6">
 
       {/* LEFT */}
       <div className="col-span-3 space-y-6">
+
+
+      {/* 🔥 TIMELINE UI */}
+        <div className="bg-white rounded-xl shadow p-5">
+          <h3 className="font-semibold mb-6">Complaint Progress</h3>
+        
+          <div className="flex items-center justify-between relative">
+        
+            {/* LINE */}
+            <div className="absolute top-3 left-0 w-full h-1 bg-gray-200 rounded"></div>
+        
+        {/* ACTIVE LINE */}
+        <div
+          className={`absolute top-3 left-0 h-1 bg-indigo-500 rounded transition-all duration-500`}
+          style={{
+            width:
+              complaint.status === "PENDING"
+                ? "33%"
+                : complaint.status === "IN_PROGRESS"
+                ? "66%"
+                : complaint.status === "RESOLVED"
+                ? "100%"
+                : "0%",
+          }}
+        ></div>
+    
+        {/* STEPS */}
+        {getTimelineSteps().map((step, index) => (
+          <div key={index} className="flex flex-col items-center z-10">
+            <div
+              className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs ${
+                step.active ? "bg-indigo-600" : "bg-gray-300"
+              }`}
+            >
+              ✓
+            </div>
+            <span
+              className={`text-xs mt-2 ${
+                step.active ? "text-indigo-600 font-semibold" : "text-gray-400"
+              }`}
+            >
+              {step.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+        <span
+      className={`px-3 py-1 rounded-full text-sm ${
+        complaint.status === "RESOLVED"
+          ? "bg-green-100 text-green-700"
+          : complaint.status === "IN_PROGRESS"
+          ? "bg-blue-100 text-blue-700"
+          : "bg-yellow-100 text-yellow-700"
+      }`}
+    >
+      {complaint.status}
+    </span>
 
         {/* HEADER */}
         <div className="bg-white rounded-xl shadow p-5 flex justify-between">
@@ -149,18 +239,59 @@ const ComplaintDetails: React.FC = () => {
             <p><b>Priority:</b> {complaint.priority || "MEDIUM"}</p>
           </div>
 
-          <div>
-            <p className="font-semibold">Attached Media</p>
-            <div>
-              {complaint.imagePath ? (
+           {/* ATTACHED MEDIA */}
+          <div className="mt-4">
+            <p className="font-semibold mb-2">Attached Media</p>
+          
+            <div className="flex gap-3 flex-wrap">
+          
+              {/* IMAGE */}
+              {complaint.imagePath && (
                 <img
-                  src={`http://localhost:8080${complaint.imagePath}`}
+                  src={`${BASE_URL}${complaint.imagePath}`}
                   alt="complaint"
-                  className="w-40 h-40 object-cover rounded-lg border"
+                  onClick={() => {
+                    setPreviewType("image");
+                    setPreviewSrc(`${BASE_URL}${complaint.imagePath}`);
+                    setPreviewOpen(true);
+                  }}
+                  className="w-32 h-32 object-cover rounded-lg border cursor-pointer hover:scale-105 transition"
                 />
-              ) : (
-                <p>No media</p>
               )}
+          
+              {/* VIDEO */}
+              {complaint.videoPath && (
+                <video
+                  src={`${BASE_URL}${complaint.videoPath}`}
+                  className="w-32 h-32 rounded-lg border cursor-pointer"
+                  onClick={() => {
+                    setPreviewType("video");
+                    setPreviewSrc(`${BASE_URL}${complaint.videoPath}`);
+                    setPreviewOpen(true);
+                  }}
+                />
+              )}
+          
+              {/* AUDIO */}
+              {complaint.audioPath && (
+                <div
+                  onClick={() => {
+                    setPreviewType("audio");
+                    setPreviewSrc(`${BASE_URL}${complaint.audioPath}`);
+                    setPreviewOpen(true);
+                  }}
+                  className="cursor-pointer bg-indigo-100 px-4 py-2 rounded-lg text-indigo-700"
+                >
+                  ▶ Play Audio
+                </div>
+              )}
+          
+              {/* NO MEDIA */}
+              {!complaint.imagePath &&
+                !complaint.videoPath &&
+                !complaint.audioPath && (
+                  <p className="text-gray-500">No media</p>
+                )}
             </div>
           </div>
         </div>
@@ -234,7 +365,8 @@ const ComplaintDetails: React.FC = () => {
 
       </div>
     </div>
-  );
+  </>
+);  
 };
 
 export default ComplaintDetails;
